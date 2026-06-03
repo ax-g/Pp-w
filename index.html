@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Kingdoms of the Four Gods</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,sans-serif;touch-action:none;}
+canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;}
+#rot{position:fixed;inset:0;background:#000;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:16px;}
+#rot svg{width:56px;height:56px;animation:rp 1.4s ease-in-out infinite;}
+@keyframes rp{0%,100%{transform:rotate(-10deg);}50%{transform:rotate(80deg);}}
+#rot p{font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:2px;}
+@media(orientation:portrait){#rot{display:flex;}}
+/* ── LOADING ── */
+#load{position:fixed;inset:0;background:#060a12;z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#load h1{font-size:clamp(18px,4vw,30px);font-weight:200;letter-spacing:6px;color:#4dd9ff;margin-bottom:4px;}
+#load .sub{font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:3px;margin-bottom:44px;}
+#lpw{width:240px;height:2px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;}
+#lp{height:100%;background:linear-gradient(90deg,#4dd9ff,#a855f7);width:0%;transition:width 0.3s;}
+#ls{margin-top:10px;font-size:9px;color:rgba(255,255,255,0.22);letter-spacing:2px;height:14px;}
+/* ── BASE HUD ── */
+#ui{position:fixed;inset:0;pointer-events:none;z-index:100;}
+/* top-left: kingdom + god */
+#tl{position:absolute;top:8px;left:10px;display:flex;flex-direction:column;gap:4px;}
+#kbox{background:rgba(0,0,0,0.62);border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:5px 10px;min-width:110px;}
+.lbl2{font-size:7px;color:rgba(255,255,255,0.28);letter-spacing:1px;text-transform:uppercase;}
+#k-nm{font-size:11px;font-weight:600;color:#4dd9ff;}
+#g-nm{font-size:9px;color:rgba(255,255,255,0.45);margin-top:1px;}
+#tod{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.07);border-radius:5px;padding:3px 8px;font-size:8px;color:rgba(255,255,255,0.38);font-family:monospace;letter-spacing:1px;}
+/* top-center bars */
+#tc{position:absolute;top:6px;left:50%;transform:translateX(-50%);display:flex;gap:8px;}
+.bw{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.bl{font-size:6px;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;}
+.bar{width:72px;height:5px;background:rgba(0,0,0,0.55);border-radius:3px;border:1px solid rgba(255,255,255,0.08);overflow:hidden;}
+.bf{height:100%;border-radius:3px;transition:width 0.25s;}
+#hpb{background:linear-gradient(90deg,#e74c3c,#c0392b);width:100%;}
+#stb{background:linear-gradient(90deg,#f39c12,#e67e22);width:100%;}
+#hgb{background:linear-gradient(90deg,#e67e22,#d35400);width:80%;}
+#thb{background:linear-gradient(90deg,#3498db,#2980b9);width:100%;}
+#xpb{background:linear-gradient(90deg,#a855f7,#7c3aed);width:35%;}
+/* top-right debug */
+#dbg{position:absolute;top:6px;right:10px;background:rgba(0,0,0,0.6);border:1px solid rgba(77,217,255,0.18);border-radius:6px;padding:5px 9px;font-size:7px;color:rgba(77,217,255,0.65);font-family:monospace;line-height:1.9;min-width:160px;text-align:left;}
+/* crosshair */
+#xh{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;pointer-events:none;}
+#xh::before,#xh::after{content:'';position:absolute;background:rgba(255,255,255,0.55);}
+#xh::before{width:1px;height:14px;left:7px;top:0;}
+#xh::after{width:14px;height:1px;left:0;top:7px;}
+/* bottom-center pill row */
+#bot{position:absolute;bottom:58px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;}
+#biome-pill{background:rgba(0,0,0,0.48);border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:2px 10px;font-size:8px;color:rgba(255,255,255,0.38);letter-spacing:1px;text-transform:uppercase;}
+#rep-pill{background:rgba(0,0,0,0.48);border:1px solid rgba(255,255,255,0.12);border-radius:5px;padding:2px 10px;font-size:8px;color:#f39c12;letter-spacing:0.8px;}
+#weather-pill{background:rgba(0,0,0,0.42);border:1px solid rgba(255,255,255,0.07);border-radius:5px;padding:2px 10px;font-size:8px;color:rgba(255,255,255,0.3);letter-spacing:0.8px;}
+#kb{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.15);font-size:7px;letter-spacing:0.5px;white-space:nowrap;pointer-events:none;}
+/* ── NOTIFICATION TOAST ── */
+#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.82);border:1px solid rgba(77,217,255,0.3);border-radius:8px;padding:8px 18px;color:#fff;font-size:12px;z-index:800;display:none;white-space:nowrap;text-align:center;max-width:90vw;}
+/* ── INTERACT PROMPT ── */
+#ipr{position:absolute;bottom:30%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.2);border-radius:5px;padding:5px 14px;color:#fff;font-size:11px;display:none;white-space:nowrap;}
+/* ── JOYSTICK ── */
+#joy{position:fixed;bottom:22px;left:22px;z-index:300;touch-action:none;}
+#jbase{width:110px;height:110px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.16);border-radius:50%;position:relative;touch-action:none;}
+#jknob{width:46px;height:46px;background:rgba(77,217,255,0.22);border:2px solid rgba(77,217,255,0.55);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 0 12px rgba(77,217,255,0.18);}
+/* ── RIGHT BUTTONS ── */
+#rbtns{position:fixed;bottom:14px;right:14px;z-index:300;display:flex;flex-direction:column;gap:8px;align-items:flex-end;touch-action:manipulation;}
+.rr2{display:flex;gap:8px;}
+.ab{width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.5);color:#fff;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
+.ab:active{background:rgba(255,255,255,0.18);}
+#bj{background:rgba(52,152,219,0.22);border-color:#3498db;color:#7ec8f0;}
+#brun{background:rgba(243,156,18,0.22);border-color:#f39c12;color:#f5c842;}
+#binv{background:rgba(168,85,247,0.22);border-color:#a855f7;width:46px;height:46px;color:#c084fc;}
+#bqst{background:rgba(77,217,255,0.22);border-color:#4dd9ff;width:46px;height:46px;color:#4dd9ff;font-size:8px;}
+#bcmp{background:rgba(46,204,113,0.22);border-color:#2ecc71;width:46px;height:46px;color:#2ecc71;font-size:8px;}
+#bgod{background:rgba(243,156,18,0.22);border-color:#f39c12;width:46px;height:46px;color:#f39c12;font-size:8px;}
+#ch{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);font-size:7px;color:rgba(255,255,255,0.12);letter-spacing:1px;pointer-events:none;z-index:150;}
+
+/* ══════════ MODAL BASE ══════════ */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:500;display:none;align-items:center;justify-content:center;pointer-events:all;}
+.mbox{width:min(680px,95vw);max-height:90vh;background:rgba(6,10,20,0.99);border:1px solid rgba(77,217,255,0.22);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;}
+.mbox.sm{width:min(480px,92vw);}
+.mbox.lg{width:min(780px,97vw);}
+.mhdr{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.mhdr h2{color:#4dd9ff;font-size:13px;font-weight:600;letter-spacing:2px;}
+.xbtn{background:none;border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.55);width:28px;height:28px;border-radius:5px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.mtabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;}
+.mtab{padding:8px 12px;font-size:10px;color:rgba(255,255,255,0.32);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:0.5px;}
+.mtab.on{color:#4dd9ff;border-bottom-color:#4dd9ff;}
+.mscroll{overflow-y:auto;flex:1;padding:12px;}
+
+/* ── INVENTORY ── */
+#inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px;}
+.isl{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:6px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px;cursor:pointer;position:relative;transition:all 0.12s;}
+.isl:active{background:rgba(77,217,255,0.08);}
+.isl.eq{border-color:#4dd9ff;background:rgba(77,217,255,0.1);}
+.ico{font-size:19px;line-height:1;}.nm{font-size:7px;color:rgba(255,255,255,0.42);text-align:center;margin-top:3px;line-height:1.2;}
+.qty{position:absolute;bottom:3px;right:4px;font-size:7px;color:rgba(255,255,255,0.32);}
+.rc{border-color:rgba(255,255,255,0.11);}.ri{border-color:rgba(52,152,219,0.4);}.re{border-color:rgba(155,89,182,0.5);}.rl{border-color:rgba(243,156,18,0.62);}
+
+/* ── QUEST LOG ── */
+.qcard{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:11px;margin-bottom:8px;cursor:pointer;transition:all 0.12s;}
+.qcard:active,.qcard:hover{background:rgba(77,217,255,0.06);border-color:rgba(77,217,255,0.25);}
+.qcard.done{opacity:0.5;}
+.qtitle{font-size:12px;font-weight:600;color:#fff;margin-bottom:3px;}
+.qdesc{font-size:9px;color:rgba(255,255,255,0.4);line-height:1.6;}
+.qtag{display:inline-block;font-size:8px;padding:2px 6px;border-radius:3px;margin-right:4px;margin-top:4px;}
+.qt-main{background:rgba(243,156,18,0.2);color:#f39c12;}
+.qt-king{background:rgba(52,152,219,0.2);color:#3498db;}
+.qt-vill{background:rgba(46,204,113,0.2);color:#2ecc71;}
+.qt-god{background:rgba(155,89,182,0.2);color:#a855f7;}
+.qt-boun{background:rgba(231,76,60,0.2);color:#e74c3c;}
+.qt-expl{background:rgba(77,217,255,0.2);color:#4dd9ff;}
+.qrew{font-size:8px;color:#f39c12;margin-top:4px;}
+
+/* ── NPC DIALOGUE ── */
+#dlg-box{position:fixed;bottom:150px;left:50%;transform:translateX(-50%);width:min(600px,90vw);background:rgba(5,9,18,0.96);border:1px solid rgba(77,217,255,0.25);border-radius:12px;padding:0;z-index:450;display:none;pointer-events:all;}
+#dlg-npc{padding:10px 14px 0;font-size:10px;font-weight:600;color:#4dd9ff;letter-spacing:1px;}
+#dlg-text{padding:8px 14px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.6;min-height:44px;}
+#dlg-choices{padding:6px 10px 10px;display:flex;flex-direction:column;gap:5px;}
+.dchoice{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 12px;font-size:11px;color:rgba(255,255,255,0.75);cursor:pointer;transition:all 0.12s;text-align:left;}
+.dchoice:active,.dchoice:hover{background:rgba(77,217,255,0.1);border-color:rgba(77,217,255,0.3);color:#fff;}
+
+/* ── GOD SELECTION ── */
+.gcard{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:13px;margin-bottom:9px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:13px;}
+.gcard:active,.gcard:hover{background:rgba(77,217,255,0.06);}
+.gcard.chosen{border-color:#f39c12;background:rgba(243,156,18,0.08);}
+.gico{font-size:30px;flex-shrink:0;}
+.ginf{flex:1;}
+.gname{font-size:13px;font-weight:600;color:#fff;margin-bottom:2px;}
+.gdesc{font-size:9px;color:rgba(255,255,255,0.4);line-height:1.5;}
+.gpow{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
+.gpill{font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.45);}
+
+/* ── KINGDOM PANEL ── */
+.kcard{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:12px;margin-bottom:8px;}
+.kname{font-size:13px;font-weight:600;margin-bottom:3px;}
+.kstat{font-size:9px;color:rgba(255,255,255,0.4);line-height:1.8;}
+.repbar{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-top:4px;}
+.repfill{height:100%;border-radius:3px;transition:width 0.4s;}
+
+/* ── CRAFT ── */
+.craft-row{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:9px 12px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.12s;}
+.craft-row:active{background:rgba(77,217,255,0.07);}
+.craft-ico{font-size:22px;width:30px;text-align:center;}
+.craft-inf{flex:1;}
+.craft-nm{font-size:11px;font-weight:600;color:#fff;margin-bottom:2px;}
+.craft-req{font-size:8px;color:rgba(255,255,255,0.38);line-height:1.5;}
+.craft-btn{background:rgba(77,217,255,0.15);border:1px solid rgba(77,217,255,0.3);color:#4dd9ff;font-size:9px;padding:4px 10px;border-radius:5px;cursor:pointer;}
+
+/* ── CAMP ── */
+.camp-row{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.12s;}
+.camp-row:active{background:rgba(46,204,113,0.07);}
+
+/* ── SURVIVAL BARS (extra) ── */
+#surv{position:absolute;bottom:86px;right:14px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;}
+.sbar-row{display:flex;align-items:center;gap:5px;}
+.sbar-lbl{font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:0.5px;text-transform:uppercase;width:32px;text-align:right;}
+.sbar{width:62px;height:4px;background:rgba(0,0,0,0.5);border-radius:2px;border:1px solid rgba(255,255,255,0.07);overflow:hidden;}
+.sbf{height:100%;border-radius:2px;transition:width 0.3s;}
+#hgbf{background:linear-gradient(90deg,#e67e22,#d35400);}
+#thbf{background:linear-gradient(90deg,#3498db,#2471a3);}
+#slpbf{background:linear-gradient(90deg,#a855f7,#7c3aed);}
+/* ── WAR BANNER ── */
+#warbanner{position:fixed;top:55px;left:50%;transform:translateX(-50%);background:rgba(180,20,20,0.88);border:1px solid #e74c3c;border-radius:7px;padding:5px 18px;font-size:11px;font-weight:600;color:#fff;letter-spacing:1px;z-index:400;display:none;}
+/* ── QUICK SLOTS ── */
+#qslots{position:fixed;bottom:148px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:200;pointer-events:none;}
+.qslot{width:44px;height:44px;background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.14);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px;color:rgba(255,255,255,0.6);position:relative;}
+.qslot .qn{position:absolute;bottom:2px;right:4px;font-size:7px;color:rgba(255,255,255,0.3);}
+</style>
+</head>
+<body>
+<div id="rot">
+  <svg viewBox="0 0 56 56" fill="none" stroke="#4dd9ff" stroke-width="1.5">
+    <rect x="16" y="6" width="22" height="34" rx="3"/>
+    <path d="M36 46 l10-10 M36 46 l-10-10" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <p>ROTATE TO LANDSCAPE</p>
+</div>
+<div id="load">
+  <h1>KINGDOMS OF THE FOUR GODS</h1>
+  <div class="sub">PROCEDURAL RPG · SEED 987654</div>
+  <div id="lpw"><div id="lp"></div></div>
+  <div id="ls">Initializing…</div>
+</div>
+<canvas id="c"></canvas>
+
+<!-- HUD -->
+<div id="ui">
+  <div id="tl">
+    <div id="kbox">
+      <div class="lbl2">Kingdom · God</div>
+      <div id="k-nm">Wanderer</div>
+      <div id="g-nm">No God chosen</div>
+    </div>
+    <div id="tod">12:00 · DAY</div>
+  </div>
+  <div id="tc">
+    <div class="bw"><div class="bl">HP</div><div class="bar"><div class="bf" id="hpb"></div></div></div>
+    <div class="bw"><div class="bl">STA</div><div class="bar"><div class="bf" id="stb"></div></div></div>
+    <div class="bw"><div class="bl">HUNGER</div><div class="bar"><div class="bf" id="hgb"></div></div></div>
+    <div class="bw"><div class="bl">THIRST</div><div class="bar"><div class="bf" id="thb"></div></div></div>
+    <div class="bw"><div class="bl">XP</div><div class="bar"><div class="bf" id="xpb"></div></div></div>
+  </div>
+  <div id="dbg">Loading…</div>
+  <div id="xh"></div>
+  <div id="ipr">[ E ] Interact</div>
+  <div id="bot">
+    <div id="biome-pill">PLAINS</div>
+    <div id="rep-pill">Reputation: Neutral</div>
+    <div id="weather-pill">☀️ Clear</div>
+  </div>
+  <div id="kb">WASD·MOVE &nbsp;|&nbsp; SPACE·JUMP &nbsp;|&nbsp; SHIFT·SPRINT &nbsp;|&nbsp; E·INTERACT &nbsp;|&nbsp; I·INV &nbsp;|&nbsp; Q·QUESTS &nbsp;|&nbsp; G·GOD &nbsp;|&nbsp; K·KINGDOMS &nbsp;|&nbsp; F·CRAFT</div>
+  <!-- Survival bars (bottom-right) -->
+  <div id="surv">
+    <div class="sbar-row"><div class="sbar-lbl">HUNGER</div><div class="sbar"><div class="sbf" id="hgbf" style="width:80%"></div></div></div>
+    <div class="sbar-row"><div class="sbar-lbl">THIRST</div><div class="sbar"><div class="sbf" id="thbf" style="width:100%"></div></div></div>
+    <div class="sbar-row"><div class="sbar-lbl">SLEEP</div><div class="sbar"><div class="sbf" id="slpbf" style="width:90%"></div></div></div>
+  </div>
+</div>
+
+<!-- War Banner -->
+<div id="warbanner">⚔️ WAR DECLARED — Kingdoms at conflict!</div>
+
+<!-- Quick Slots -->
+<div id="qslots">
+  <div class="qslot">⚔️<div class="qn">1</div></div>
+  <div class="qslot">🧪<div class="qn">2</div></div>
+  <div class="qslot">🍖<div class="qn">3</div></div>
+  <div class="qslot">🪵<div class="qn">4</div></div>
+</div>
+
+<!-- Notification -->
+<div id="toast"></div>
+
+<!-- NPC Dialogue -->
+<div id="dlg-box">
+  <div id="dlg-npc">Villager</div>
+  <div id="dlg-text">Hello, traveler…</div>
+  <div id="dlg-choices"></div>
+</div>
+
+<!-- Joystick -->
+<div id="joy"><div id="jbase"><div id="jknob"></div></div></div>
+
+<!-- Right Buttons -->
+<div id="rbtns">
+  <div class="rr2">
+    <button class="ab" id="binv" onpointerdown="openModal('inv-modal')">INV</button>
+    <button class="ab" id="bqst" onpointerdown="openModal('quest-modal')">QUESTS</button>
+    <button class="ab" id="bgod" onpointerdown="openModal('god-modal')">GOD</button>
+    <button class="ab" id="bcmp" onpointerdown="openModal('camp-modal')">CAMP</button>
+  </div>
+  <div class="rr2">
+    <button class="ab" id="brun" onpointerdown="startSprint()" onpointerup="stopSprint()" onpointerleave="stopSprint()">RUN</button>
+    <button class="ab" id="bj" onpointerdown="doJump()">JUMP</button>
+  </div>
+</div>
+<div id="ch">← DRAG TO LOOK →</div>
+
+<!-- ═══ INVENTORY MODAL ═══ -->
+<div class="modal" id="inv-modal">
+  <div class="mbox">
+    <div class="mhdr"><h2>INVENTORY</h2><button class="xbtn" onclick="closeModal('inv-modal')">✕</button></div>
+    <div class="mtabs">
+      <div class="mtab on" onclick="invTab(this,'all')">All</div>
+      <div class="mtab" onclick="invTab(this,'weapons')">Weapons</div>
+      <div class="mtab" onclick="invTab(this,'armor')">Armor</div>
+      <div class="mtab" onclick="invTab(this,'resources')">Resources</div>
+      <div class="mtab" onclick="invTab(this,'food')">Food</div>
+      <div class="mtab" onclick="invTab(this,'potions')">Potions</div>
+      <div class="mtab" onclick="invTab(this,'relics')">Relics</div>
+    </div>
+    <div class="mscroll"><div id="inv-grid"></div></div>
+  </div>
+</div>
+
+<!-- ═══ QUEST LOG MODAL ═══ -->
+<div class="modal" id="quest-modal">
+  <div class="mbox">
+    <div class="mhdr"><h2>QUEST LOG</h2><button class="xbtn" onclick="closeModal('quest-modal')">✕</button></div>
+    <div class="mtabs">
+      <div class="mtab on" onclick="questTab(this,'active')">Active</div>
+      <div class="mtab" onclick="questTab(this,'main')">Main</div>
+      <div class="mtab" onclick="questTab(this,'kingdom')">Kingdom</div>
+      <div class="mtab" onclick="questTab(this,'god')">God</div>
+      <div class="mtab" onclick="questTab(this,'bounty')">Bounty</div>
+      <div class="mtab" onclick="questTab(this,'done')">Completed</div>
+    </div>
+    <div class="mscroll" id="quest-list"></div>
+  </div>
+</div>
+
+<!-- ═══ GOD SELECTION MODAL ═══ -->
+<div class="modal" id="god-modal">
+  <div class="mbox sm">
+    <div class="mhdr"><h2>DIVINE COVENANT</h2><button class="xbtn" onclick="closeModal('god-modal')">✕</button></div>
+    <div class="mscroll" id="god-list"></div>
+  </div>
+</div>
+
+<!-- ═══ KINGDOMS MODAL ═══ -->
+<div class="modal" id="kingdom-modal">
+  <div class="mbox">
+    <div class="mhdr"><h2>KINGDOMS OF THE WORLD</h2><button class="xbtn" onclick="closeModal('kingdom-modal')">✕</button></div>
+    <div class="mtabs">
+      <div class="mtab on" onclick="kTab(this,'overview')">Overview</div>
+      <div class="mtab" onclick="kTab(this,'relations')">Relations</div>
+      <div class="mtab" onclick="kTab(this,'war')">War</div>
+    </div>
+    <div class="mscroll" id="kingdom-list"></div>
+  </div>
+</div>
+
+<!-- ═══ CRAFT MODAL ═══ -->
+<div class="modal" id="craft-modal">
+  <div class="mbox sm">
+    <div class="mhdr"><h2>CRAFTING TABLE</h2><button class="xbtn" onclick="closeModal('craft-modal')">✕</button></div>
+    <div class="mtabs">
+      <div class="mtab on" onclick="craftTab(this,'tools')">Tools</div>
+      <div class="mtab" onclick="craftTab(this,'weapons')">Weapons</div>
+      <div class="mtab" onclick="craftTab(this,'armor')">Armor</div>
+      <div class="mtab" onclick="craftTab(this,'camp')">Camp</div>
+      <div class="mtab" onclick="craftTab(this,'cooking')">Cooking</div>
+      <div class="mtab" onclick="craftTab(this,'potions')">Potions</div>
+    </div>
+    <div class="mscroll" id="craft-list"></div>
+  </div>
+</div>
+
+<!-- ═══ CAMP MODAL ═══ -->
+<div class="modal" id="camp-modal">
+  <div class="mbox sm">
+    <div class="mhdr"><h2>CAMP</h2><button class="xbtn" onclick="closeModal('camp-modal')">✕</button></div>
+    <div class="mscroll" id="camp-list"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════════════════════════
+//  RENDERER + SCENE  (unchanged from engine)
+// ════════════════════════════════════════════════════════════════════
+const isMob=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:!isMob,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,isMob?1.0:1.5));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(70,window.innerWidth/window.innerHeight,0.1,600);
+window.addEventListener('resize',()=>{renderer.setSize(window.innerWidth,window.innerHeight);camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();});
+
+// ════════════════════════════════════════════════════════════════════
+//  WORLD SEED
+// ════════════════════════════════════════════════════════════════════
+const WORLD_SEED=987654;
+
+// ════════════════════════════════════════════════════════════════════
+//  PERLIN NOISE + FBM  (seeded, deterministic)
+// ════════════════════════════════════════════════════════════════════
+const P=new Uint8Array(512);
+(function(){const src=new Uint8Array(256);for(let i=0;i<256;i++)src[i]=i;let s=WORLD_SEED;const xs=()=>{s^=s<<13;s^=s>>17;s^=s<<5;return(s>>>0)/4294967296;};for(let i=255;i>0;i--){const j=(xs()*(i+1))|0;[src[i],src[j]]=[src[j],src[i]];}for(let i=0;i<512;i++)P[i]=src[i&255];})();
+const _g2=[[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
+function _fade(t){return t*t*t*(t*(t*6-15)+10);}
+function _lrp(a,b,t){return a+t*(b-a);}
+function _g(h,x,y){const g=_g2[h&7];return g[0]*x+g[1]*y;}
+const _nc=new Map();const _NCAP=14000;
+function perlin2(x,y){
+  const kx=(x*100)|0,ky=(y*100)|0,k=kx*1000003+ky;
+  if(_nc.has(k))return _nc.get(k);
+  const X=Math.floor(x)&255,Y=Math.floor(y)&255,xf=x-Math.floor(x),yf=y-Math.floor(y);
+  const u=_fade(xf),v=_fade(yf),aa=P[P[X]+Y],ab=P[P[X]+Y+1],ba=P[P[X+1]+Y],bb=P[P[X+1]+Y+1];
+  const r=_lrp(_lrp(_g(aa,xf,yf),_g(ba,xf-1,yf),u),_lrp(_g(ab,xf,yf-1),_g(bb,xf-1,yf-1),u),v);
+  if(_nc.size>=_NCAP)_nc.delete(_nc.keys().next().value);
+  _nc.set(k,r);return r;
+}
+function fbm(x,y,oct,pers,lac){let v=0,a=1,f=1,mx=0;for(let i=0;i<oct;i++){v+=perlin2(x*f,y*f)*a;mx+=a;a*=pers;f*=lac;}return v/mx;}
+
+// ── Kingdom noise map (large FBM divides world into 4 kingdoms) ──
+function kingdomNoise(wx,wz){
+  const kx=fbm(wx*0.0004,wz*0.0004,3,0.5,2.0);
+  const kz=fbm(wx*0.0004+50,wz*0.0004+50,3,0.5,2.0);
+  return{kx,kz};
+}
+function getKingdom(wx,wz){
+  const{kx,kz}=kingdomNoise(wx,wz);
+  if(kx>0.05&&kz>0.05)return'sun';
+  if(kx<-0.05&&kz>0.05)return'water';
+  if(kx>0.05&&kz<-0.05)return'forest';
+  return'tech';
+}
+
+function biomeN(wx,wz){return fbm(wx*0.0008,wz*0.0008,3,0.5,2.0);}
+function getBiome(wx,wz){
+  const bn=biomeN(wx,wz),mo=perlin2(wx*0.0006+100,wz*0.0006+100);
+  const k=getKingdom(wx,wz);
+  if(k==='sun')return bn>0.2?'mountain':'desert';
+  if(k==='water')return bn>0.3?'hills':'plains';
+  if(k==='forest')return bn>0.15?'mountain':'forest';
+  return bn>0.35?'mountain':bn>0.12?'hills':'plains';
+}
+
+function terrainH(wx,wz){
+  const biome=getBiome(wx,wz);
+  const macro=fbm(wx*0.003,wz*0.003,2,0.5,2.0)*18;
+  const meso=fbm(wx*0.009,wz*0.009,4,0.52,2.0)*28;
+  const micro=fbm(wx*0.028,wz*0.028,3,0.45,2.0)*6;
+  let h=macro+meso+micro;
+  if(biome==='mountain')h*=1.65;
+  else if(biome==='hills')h*=1.15;
+  else if(biome==='plains')h=h*0.4+2;
+  else if(biome==='desert')h=h*0.5+1.5;
+  else if(biome==='forest')h=h*0.7+3;
+  return Math.max(h,-2);
+}
+function terrainNorm(wx,wz){const d=0.4;const n=new THREE.Vector3(terrainH(wx-d,wz)-terrainH(wx+d,wz),2*d,terrainH(wx,wz-d)-terrainH(wx,wz+d));return n.normalize();}
+function terrainColor(h,biome){
+  if(h<0)return[0.10,0.30,0.55];
+  if(h<1.5)return[0.15,0.40,0.62];
+  if(biome==='desert')return h<3?[0.88,0.78,0.52]:h<8?[0.80,0.68,0.42]:[0.72,0.60,0.38];
+  if(biome==='mountain')return h<12?[0.40,0.38,0.34]:h<25?[0.52,0.50,0.46]:[0.88,0.88,0.90];
+  if(biome==='forest')return h<2.5?[0.72,0.64,0.46]:h<12?[0.16,0.48,0.13]:[0.30,0.42,0.28];
+  return h<2.5?[0.74,0.66,0.46]:h<8?[0.25,0.56,0.20]:h<18?[0.20,0.46,0.16]:h<28?[0.44,0.40,0.35]:[0.86,0.86,0.88];
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  CHUNK SYSTEM
+// ════════════════════════════════════════════════════════════════════
+const CSIZ=32,SEG_N=32,SEG_M=16,SEG_F=8,LOAD_R=3,UNLOAD_R=5;
+const chunks=new Map(),cpool=[];
+let cqueue=[],cbusy=false,PCX=0,PCZ=0,lPCX=99999,lPCZ=99999;
+const terrainMat=new THREE.MeshLambertMaterial({vertexColors:true});
+function ck(cx,cz){return cx+'|'+cz;}
+function lodSegs(cx,cz){const d=Math.max(Math.abs(cx-PCX),Math.abs(cz-PCZ));return d<=1?SEG_N:d<=2?SEG_M:SEG_F;}
+function buildChunk(cx,cz,segs){
+  const geo=new THREE.PlaneGeometry(CSIZ,CSIZ,segs,segs);geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position,cols=new Float32Array(pos.count*3);
+  const ox=cx*CSIZ,oz=cz*CSIZ;
+  for(let i=0;i<pos.count;i++){const wx=pos.getX(i)+ox,wz=pos.getZ(i)+oz,h=terrainH(wx,wz);pos.setY(i,h);const c=terrainColor(h,getBiome(wx,wz));cols[i*3]=c[0];cols[i*3+1]=c[1];cols[i*3+2]=c[2];}
+  pos.needsUpdate=true;geo.setAttribute('color',new THREE.BufferAttribute(cols,3));geo.computeVertexNormals();
+  let mesh;if(cpool.length>0){mesh=cpool.pop();mesh.geometry.dispose();mesh.geometry=geo;}else{mesh=new THREE.Mesh(geo,terrainMat);mesh.receiveShadow=true;}
+  mesh.position.set(ox,0,oz);mesh.matrixAutoUpdate=false;mesh.updateMatrix();return mesh;
+}
+function scheduleChunk(cx,cz,pri){const k=ck(cx,cz);if(chunks.has(k)||cqueue.find(c=>c.cx===cx&&c.cz===cz))return;cqueue.push({cx,cz,pri});cqueue.sort((a,b)=>b.pri-a.pri);}
+async function processQueue(){if(cbusy||!cqueue.length)return;cbusy=true;const{cx,cz}=cqueue.shift(),k=ck(cx,cz);if(!chunks.has(k)){const mesh=buildChunk(cx,cz,lodSegs(cx,cz));scene.add(mesh);chunks.set(k,{mesh,cx,cz});spawnDecor(cx,cz);}cbusy=false;}
+function updateChunks(){const px=ppos.x,pz=ppos.z;const cx=Math.floor(px/CSIZ),cz=Math.floor(pz/CSIZ);PCX=cx;PCZ=cz;if(cx===lPCX&&cz===lPCZ)return;lPCX=cx;lPCZ=cz;for(let dz=-LOAD_R;dz<=LOAD_R;dz++)for(let dx=-LOAD_R;dx<=LOAD_R;dx++)scheduleChunk(cx+dx,cz+dz,LOAD_R-Math.max(Math.abs(dx),Math.abs(dz)));for(const[k,{mesh,cx:ccx,cz:ccz}]of chunks){if(Math.max(Math.abs(ccx-cx),Math.abs(ccz-cz))>UNLOAD_R){scene.remove(mesh);cpool.length<40?cpool.push(mesh):mesh.geometry.dispose();chunks.delete(k);removeDecor(k);}}}
+
+// ════════════════════════════════════════════════════════════════════
+//  TREE SYSTEM  (GPU instanced — 2 draw calls)
+// ════════════════════════════════════════════════════════════════════
+function rng32(seed){return function(){seed|=0;seed=(seed+0x6D2B79F5)|0;let t=Math.imul(seed^(seed>>>15),1|seed);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+const TRUNK_MAT=new THREE.MeshLambertMaterial({color:0x6b3e1e});
+const LEAF_MAT=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uDayT:{value:1.0}},vertexShader:`uniform float uTime;varying vec3 vN;void main(){vN=normalMatrix*normal;vec3 p=position;vec4 wp=modelMatrix*vec4(p,1.0);float wave=sin(uTime*1.3+wp.x*0.5+wp.z*0.4)*0.12+sin(uTime*0.8+wp.z*0.7)*0.07;p.x+=wave;p.z+=wave*0.6;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}`,fragmentShader:`varying vec3 vN;uniform float uDayT;void main(){float l=max(dot(normalize(vN),normalize(vec3(0.5,1.0,0.4))),0.0);vec3 col=vec3(0.18,0.54,0.12)*(0.5+l*0.6)*max(uDayT*0.8+0.2,0.2);gl_FragColor=vec4(col,1.0);}`});
+const TRUNK_GEO=new THREE.CylinderGeometry(0.08,0.28,1.0,6,2);
+const LEAF_GEO=new THREE.IcosahedronGeometry(1.0,0);
+const ROCK_GEO=new THREE.DodecahedronGeometry(1.0,0);
+const ROCK_MAT=new THREE.MeshLambertMaterial({color:0x7a7570});
+const BUSH_GEO=new THREE.IcosahedronGeometry(1.0,0);
+const BUSH_MAT=new THREE.MeshLambertMaterial({color:0x2e7a1a});
+const MAX_TRUNK=isMob?600:1200,MAX_LEAF=isMob?1200:2400,MAX_ROCK=isMob?400:800,MAX_BUSH=isMob?300:600;
+let trunkIM,leafIM,rockIM,bushIM;
+const decorMap=new Map();
+const _M4=new THREE.Matrix4(),_V3=new THREE.Vector3(),_Q=new THREE.Quaternion(),_S=new THREE.Vector3(),_AY=new THREE.Vector3(0,1,0);
+function setIM(im,idx,x,y,z,sx,sy,sz,ry=0){_V3.set(x,y,z);_S.set(sx,sy,sz);_Q.setFromAxisAngle(_AY,ry);_M4.compose(_V3,_Q,_S);im.setMatrixAt(idx,_M4);im.instanceMatrix.needsUpdate=true;}
+function initTrees(){trunkIM=new THREE.InstancedMesh(TRUNK_GEO,TRUNK_MAT,MAX_TRUNK);leafIM=new THREE.InstancedMesh(LEAF_GEO,LEAF_MAT,MAX_LEAF);rockIM=new THREE.InstancedMesh(ROCK_GEO,ROCK_MAT,MAX_ROCK);bushIM=new THREE.InstancedMesh(BUSH_GEO,BUSH_MAT,MAX_BUSH);trunkIM.count=0;leafIM.count=0;rockIM.count=0;bushIM.count=0;trunkIM.castShadow=true;leafIM.castShadow=false;rockIM.castShadow=true;bushIM.castShadow=false;scene.add(trunkIM);scene.add(leafIM);scene.add(rockIM);scene.add(bushIM);}
+function densityFor(biome,h,slope){if(h<1.8)return{trees:0,rocks:0,bushes:0};if(slope>35)return{trees:0,rocks:1,bushes:0};switch(biome){case'forest':return{trees:h>14?3:5,rocks:0,bushes:1};case'plains':return{trees:h>6?1:0,rocks:0,bushes:1};case'hills':return{trees:h>4?2:1,rocks:1,bushes:1};case'mountain':return h>28?{trees:0,rocks:3,bushes:0}:h>18?{trees:0,rocks:2,bushes:0}:{trees:2,rocks:1,bushes:1};case'desert':return{trees:0,rocks:2,bushes:0};default:return{trees:1,rocks:0,bushes:0};}}
+function treeTypeFor(biome,h,rv){if(biome==='forest')return rv>0.85&&h>10?'ancient':rv>0.5?'large':'medium';if(biome==='mountain')return rv>0.6?'medium':'small';if(biome==='hills')return rv>0.7?'large':'medium';return rv>0.75?'medium':'small';}
+const TREE_H={small:[3,5],medium:[5,8],large:[8,12],ancient:[12,18]};
+function addTree(wx,wy,wz,seed,typeKey,tList,lList){if(trunkIM.count>=MAX_TRUNK-3||leafIM.count>=MAX_LEAF-4)return;const r=rng32(seed);const[hMin,hMax]=TREE_H[typeKey];const th=hMin+r()*(hMax-hMin);const ry=r()*Math.PI*2;const trR=typeKey==='ancient'?0.5:typeKey==='large'?0.3:typeKey==='medium'?0.2:0.12;const lean=(r()-0.5)*0.15;const ti=trunkIM.count;setIM(trunkIM,ti,wx+lean,wy+th*0.5,wz+lean,trR,th,trR,ry);trunkIM.count++;tList.push(ti);const lc=typeKey==='ancient'?4:typeKey==='large'?3:2;for(let i=0;i<lc;i++){if(leafIM.count>=MAX_LEAF)break;const cr=(0.8+r()*0.7)*th*0.28;const cy=wy+th*(0.55+i*0.13)+(r()-0.5)*0.8;const cx2=wx+(r()-0.5)*cr*0.6+lean;const cz2=wz+(r()-0.5)*cr*0.6+lean;const cs=cr*(0.9+r()*0.5);const li=leafIM.count;setIM(leafIM,li,cx2,cy,cz2,cs,cs*(0.7+r()*0.5),cs,r()*Math.PI*2);leafIM.count++;lList.push(li);}}
+function addRock(wx,wy,wz,seed,rList){if(rockIM.count>=MAX_ROCK)return;const r=rng32(seed+777);const sc=0.4+r()*1.1;const ri=rockIM.count;setIM(rockIM,ri,wx,wy+sc*0.4,wz,sc*(0.8+r()*0.4),sc*(0.5+r()*0.5),sc*(0.8+r()*0.4),r()*Math.PI*2);rockIM.count++;rList.push(ri);}
+function addBush(wx,wy,wz,seed,bList){if(bushIM.count>=MAX_BUSH)return;const r=rng32(seed+333);const sc=0.45+r()*0.65;const bi=bushIM.count;setIM(bushIM,bi,wx,wy+sc*0.65,wz,sc,sc*0.7,sc,r()*Math.PI*2);bushIM.count++;bList.push(bi);}
+function spawnDecor(cx,cz){const key=ck(cx,cz);if(decorMap.has(key))return;const ox=cx*CSIZ,oz=cz*CSIZ;const r=rng32(cx*73856093^cz*19349663);const tList=[],lList=[],rList=[],bList=[];const tries=isMob?9:14;for(let i=0;i<tries;i++){const wx=ox+(r()-0.5)*CSIZ,wz=oz+(r()-0.5)*CSIZ,h=terrainH(wx,wz);if(h<1.8)continue;const biome=getBiome(wx,wz);const norm=terrainNorm(wx,wz);const slope=Math.acos(Math.min(norm.y,1))*180/Math.PI;const dens=densityFor(biome,h,slope);const roll=r();if(dens.trees>0&&roll<dens.trees*0.17){addTree(wx,h,wz,(cx*99991^cz*48611^i*7919)>>>0,treeTypeFor(biome,h,r()),tList,lList);}else if(dens.rocks>0&&roll<dens.rocks*0.22){addRock(wx,h,wz,(cx*11317^cz*77291^i*3571)>>>0,rList);}else if(dens.bushes>0&&roll<dens.bushes*0.14&&h>2&&slope<25){addBush(wx,h,wz,(cx*55001^cz*31337^i*1009)>>>0,bList);}}decorMap.set(key,{tList,lList,rList,bList});}
+function removeDecor(key){const entry=decorMap.get(key);if(!entry)return;swapRA(trunkIM,entry.tList,decorMap,'tList');swapRA(leafIM,entry.lList,decorMap,'lList');swapRA(rockIM,entry.rList,decorMap,'rList');swapRA(bushIM,entry.bList,decorMap,'bList');decorMap.delete(key);}
+function swapRA(im,idxList,dmap,field){idxList.sort((a,b)=>b-a);for(const idx of idxList){const last=im.count-1;if(idx===last){im.count--;continue;}const tmpM=new THREE.Matrix4();im.getMatrixAt(last,tmpM);im.setMatrixAt(idx,tmpM);im.count--;for(const[,entry]of dmap){const arr=entry[field];const li=arr.indexOf(last);if(li!==-1)arr[li]=idx;}}im.instanceMatrix.needsUpdate=true;}
+function updateTrees(t,dayT){LEAF_MAT.uniforms.uTime.value=t;LEAF_MAT.uniforms.uDayT.value=dayT;}
+
+// ════════════════════════════════════════════════════════════════════
+//  SKY + LIGHTING + WATER
+// ════════════════════════════════════════════════════════════════════
+let skyMesh,skyU,worldT=0.35;
+const DAY_SPD=1/1200;
+function buildSky(){skyU={uTime:{value:worldT},uSunDir:{value:new THREE.Vector3(0.4,0.7,0.3).normalize()},uMoonDir:{value:new THREE.Vector3(-0.4,-0.7,-0.3)},uDayT:{value:1}};const mat=new THREE.ShaderMaterial({side:THREE.BackSide,uniforms:skyU,vertexShader:`varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`varying vec3 vD;uniform float uTime,uDayT;uniform vec3 uSunDir,uMoonDir;float hsh(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.4)))*43758.5);}void main(){vec3 d=normalize(vD);float up=max(d.y,0.);vec3 daySky=mix(vec3(0.60,0.74,0.90),vec3(0.10,0.32,0.72),pow(up,0.5));float sd=max(dot(d,uSunDir),0.);daySky+=vec3(1.,0.95,0.65)*pow(sd,100.)*1.4+vec3(1.,0.6,0.2)*pow(sd,7.)*0.2;float hor=clamp(1.-abs(uSunDir.y)*2.8,0.,1.);daySky=mix(daySky,daySky+vec3(0.95,0.42,0.12)*0.6,hor*pow(max(dot(d,normalize(vec3(uSunDir.x,0.,uSunDir.z))),0.),4.));float stars=step(0.987,hsh(floor(d*140.)))*clamp(-uSunDir.y*4.+0.5,0.,1.);float md=max(dot(d,uMoonDir),0.);vec3 night=vec3(0.01,0.02,0.06)*max(1.-up,0.04)+vec3(stars)+vec3(0.75,0.8,1.)*pow(md,130.)*0.9;vec3 sky=mix(night,daySky,uDayT);sky=mix(sky,vec3(0.35,0.45,0.4)*uDayT+vec3(0.02,0.02,0.04),max(-d.y,0.)*0.5);gl_FragColor=vec4(sky,1.);}`});skyMesh=new THREE.Mesh(new THREE.SphereGeometry(500,20,12),mat);scene.add(skyMesh);}
+let sunL,ambL;
+function setupLights(){ambL=new THREE.AmbientLight(0x8ab4cc,0.38);scene.add(ambL);sunL=new THREE.DirectionalLight(0xfff5d0,1.1);sunL.position.set(200,300,100);sunL.castShadow=true;sunL.shadow.camera.near=1;sunL.shadow.camera.far=450;sunL.shadow.camera.left=-90;sunL.shadow.camera.right=90;sunL.shadow.camera.top=90;sunL.shadow.camera.bottom=-90;sunL.shadow.mapSize.set(isMob?512:1024,isMob?512:1024);sunL.shadow.bias=-0.001;scene.add(sunL);scene.add(new THREE.HemisphereLight(0x87ceeb,0x3a7a3a,0.22));}
+let waterU;
+function buildWater(){waterU={uT:{value:0}};const mat=new THREE.ShaderMaterial({uniforms:waterU,transparent:true,vertexShader:`uniform float uT;varying vec2 vUv;varying float vW;void main(){vUv=uv;vec3 p=position;p.y+=sin(p.x*0.09+uT)*0.3+sin(p.z*0.11+uT*0.6)*0.25;vW=p.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varying vec2 vUv;varying float vW;uniform float uT;void main(){vec3 c=mix(vec3(0.04,0.18,0.4),vec3(0.10,0.40,0.65),clamp(vW+0.5,0.,1.));float g=sin(vUv.x*30.+uT)*sin(vUv.y*28.-uT*0.7)*0.5+0.5;c+=vec3(0.12,0.22,0.30)*g*0.12;gl_FragColor=vec4(c,0.80);}`});const wm=new THREE.Mesh(new THREE.PlaneGeometry(800,800,4,4),mat);wm.rotation.x=-Math.PI/2;wm.position.y=1.2;scene.add(wm);}
+function updateSky(dt){worldT=(worldT+DAY_SPD*dt)%1.0;const ang=(worldT-0.25)*Math.PI*2;skyU.uSunDir.value.set(Math.cos(ang)*0.6,Math.sin(ang),Math.sin(ang)*0.4).normalize();skyU.uMoonDir.value.set(-skyU.uSunDir.value.x,-skyU.uSunDir.value.y,-skyU.uSunDir.value.z);const dayT=THREE.MathUtils.clamp(skyU.uSunDir.value.y*3+0.35,0,1);skyU.uDayT.value=dayT;skyU.uTime.value=worldT;if(skyMesh)skyMesh.position.copy(camera.position);if(sunL){sunL.position.copy(skyU.uSunDir.value).multiplyScalar(260);sunL.intensity=dayT*1.25;sunL.color.setRGB(_lrp(0.9,1.0,dayT),_lrp(0.4,0.95,dayT),_lrp(0.2,0.82,dayT));ambL.intensity=_lrp(0.04,0.38,dayT);}scene.fog.density=_lrp(0.012,0.006,dayT);scene.fog.color.setRGB(_lrp(0.03,0.60,dayT),_lrp(0.03,0.70,dayT),_lrp(0.05,0.82,dayT));const hh=Math.floor(worldT*24),mm=Math.floor((worldT*24-hh)*60);document.getElementById('tod').textContent=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${worldT<0.22||worldT>0.78?'NIGHT':worldT<0.5?'DAY':'DUSK'}`;return dayT;}
+
+// ════════════════════════════════════════════════════════════════════
+//  PHYSICS + PLAYER CONTROLLER  (unchanged from engine)
+// ════════════════════════════════════════════════════════════════════
+const PLAYER_H=1.80,GRAVITY=-26,FALL_M=1.55,MAX_SLOPE=52,JUMP_FORCE=12;
+const PROBE=[[0,0],[0.45,0],[-0.45,0],[0,0.45],[0,-0.45]];
+const ppos=new THREE.Vector3(0,50,0);
+const pvel=new THREE.Vector3();
+let pGround=false,pCoyote=0,pJumpBuf=0,pSlope=0,pGroundY=0;
+function probeGround(x,z){let maxH=-Infinity,ax=0,az=0;for(const[ox,oz]of PROBE){const h=terrainH(x+ox,z+oz);if(h>maxH)maxH=h;const n=terrainNorm(x+ox,z+oz);ax+=n.x;az+=n.z;}const nx=ax/5,nz=az/5,ny=Math.sqrt(Math.max(1-nx*nx-nz*nz,0));return{groundY:maxH+PLAYER_H,slope:Math.acos(Math.min(ny,1))*180/Math.PI,nx,ny,nz};}
+
+// ════════════════════════════════════════════════════════════════════
+//  INPUT SYSTEM
+// ════════════════════════════════════════════════════════════════════
+const keys={};
+const JOY={x:0,y:0};
+let isSprinting=false;
+document.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space'){e.preventDefault();doJump();}if(e.code==='KeyE')tryInteract();if(e.code==='KeyI')openModal('inv-modal');if(e.code==='KeyQ')openModal('quest-modal');if(e.code==='KeyG')openModal('god-modal');if(e.code==='KeyK')openModal('kingdom-modal');if(e.code==='KeyF')openModal('craft-modal');if(e.code==='Escape')closeAllModals();if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSprinting=true;});
+document.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSprinting=false;});
+let mlocked=false,camYaw=0,camPitch=0.18,camDist=5,yawD=0,pitchD=0;
+canvas.addEventListener('click',()=>{if(document.querySelector('.modal[style*="flex"]'))return;canvas.requestPointerLock();});
+document.addEventListener('pointerlockchange',()=>{mlocked=document.pointerLockElement===canvas;});
+document.addEventListener('mousemove',e=>{if(!mlocked)return;yawD-=e.movementX*0.0024;pitchD-=e.movementY*0.0024;});
+let jId=null;const jBase=document.getElementById('jbase'),jKnob=document.getElementById('jknob');const JR=35;let jCX=0,jCY=0;
+function updateJoyCenter(){const r=jBase.getBoundingClientRect();jCX=r.left+r.width/2;jCY=r.top+r.height/2;}
+function applyJoy(px,py){let dx=px-jCX,dy=py-jCY;const mg=Math.sqrt(dx*dx+dy*dy);if(mg>JR){dx=dx/mg*JR;dy=dy/mg*JR;}JOY.x=dx/JR;JOY.y=dy/JR;jKnob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;}
+function resetJoy(){jId=null;JOY.x=0;JOY.y=0;jKnob.style.transform='translate(-50%,-50%)';}
+jBase.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();jBase.setPointerCapture(e.pointerId);jId=e.pointerId;updateJoyCenter();applyJoy(e.clientX,e.clientY);},{passive:false});
+jBase.addEventListener('pointermove',e=>{if(e.pointerId!==jId)return;e.preventDefault();applyJoy(e.clientX,e.clientY);},{passive:false});
+jBase.addEventListener('pointerup',e=>{if(e.pointerId===jId)resetJoy();});
+jBase.addEventListener('pointercancel',e=>{if(e.pointerId===jId)resetJoy();});
+let camId=null,camLx=0,camLy=0;
+canvas.addEventListener('pointerdown',e=>{const jr=jBase.getBoundingClientRect();const overJ=e.clientX>=jr.left&&e.clientX<=jr.right&&e.clientY>=jr.top&&e.clientY<=jr.bottom;const rr=document.getElementById('rbtns').getBoundingClientRect();const overR=e.clientX>=rr.left&&e.clientX<=rr.right&&e.clientY>=rr.top&&e.clientY<=rr.bottom;if(overJ||overR||camId!==null)return;camId=e.pointerId;camLx=e.clientX;camLy=e.clientY;canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointermove',e=>{if(e.pointerId!==camId)return;yawD+=(camLx-e.clientX)*0.005;pitchD+=(camLy-e.clientY)*0.005;camLx=e.clientX;camLy=e.clientY;});
+canvas.addEventListener('pointerup',e=>{if(e.pointerId===camId)camId=null;});
+canvas.addEventListener('pointercancel',e=>{if(e.pointerId===camId)camId=null;});
+
+// ════════════════════════════════════════════════════════════════════
+//  KINGDOM DATA  (deterministic from WORLD_SEED via FBM)
+// ════════════════════════════════════════════════════════════════════
+const KINGDOMS={
+  sun:{id:'sun',name:'Kingdom of Sun',icon:'☀️',col:'#f39c12',terrain:'Desert · Oasis · Dunes',resources:'Gold · Sun Crystals',structures:'Pyramids · Sun Temples',boss:'Sun Titan',rep:0,military:75,economy:80,pop:2400,capitalX:200,capitalZ:-180,atWarWith:[]},
+  water:{id:'water',name:'Kingdom of Water',icon:'🌊',col:'#3498db',terrain:'Rivers · Lakes · Islands',resources:'Fish · Pearls',structures:'Harbors · Water Temples',boss:'Leviathan',rep:0,military:60,economy:90,pop:3100,capitalX:-220,capitalZ:-200,atWarWith:[]},
+  forest:{id:'forest',name:'Kingdom of Forest',icon:'🌲',col:'#2ecc71',terrain:'Dense Forest · Giant Trees · Meadows',resources:'Wood · Herbs',structures:'Tree Villages · Forest Temples',boss:'Elder Treant',rep:0,military:55,economy:70,pop:2800,capitalX:180,capitalZ:200,atWarWith:[]},
+  tech:{id:'tech',name:'Kingdom of Technology',icon:'⚙️',col:'#9b59b6',terrain:'Plains · Industrial Zones',resources:'Iron · Coal · Energy Crystals',structures:'Windmills · Factories · Railways',boss:'Titan Machine',rep:0,military:90,economy:95,pop:3800,capitalX:-200,capitalZ:220,atWarWith:[]}
+};
+const REP_LABELS=['Enemy','Untrusted','Neutral','Friend','Hero','Champion'];
+function repLabel(k){const r=KINGDOMS[k].rep;if(r<=-40)return REP_LABELS[0];if(r<-10)return REP_LABELS[1];if(r<20)return REP_LABELS[2];if(r<50)return REP_LABELS[3];if(r<80)return REP_LABELS[4];return REP_LABELS[5];}
+function repColor(k){const l=repLabel(k);return{Enemy:'#e74c3c',Untrusted:'#e67e22',Neutral:'#aaa',Friend:'#2ecc71',Hero:'#3498db',Champion:'#f39c12'}[l];}
+
+// ════════════════════════════════════════════════════════════════════
+//  GOD SYSTEM
+// ════════════════════════════════════════════════════════════════════
+const GODS={
+  sun:{id:'sun',name:'Sun God — Ra',icon:'☀️',col:'#f39c12',desc:'Master of heat, light, and ancient power. Grants fire abilities and desert survival.',powers:['Solar Flare (dmg)','Heat Aura (warmth)','Sun Vision (map reveal)'],potions:[{name:'Solar Draft L1',eff:'+30 HP, warm',icon:'🔥'},{name:'Solar Draft L2',eff:'+60 HP, fire resist',icon:'🌋'},{name:'Elixir of Ra',eff:'Invincible 30s',icon:'☀️'}]},
+  water:{id:'water',name:'Water God — Thalassa',icon:'🌊',col:'#3498db',desc:'Ruler of oceans and rain. Grants water breathing, healing rain and storm control.',powers:['Healing Rain','Tidal Force (push)','Storm Call (aoe)'],potions:[{name:'Tide Vial L1',eff:'+30 HP, breathe water',icon:'💧'},{name:'Tide Vial L2',eff:'+60 HP, swim speed',icon:'🌊'},{name:'Elixir of Thalassa',eff:'Unlimited stamina 60s',icon:'🌀'}]},
+  forest:{id:'forest',name:'Forest God — Sylvanus',icon:'🌲',col:'#2ecc71',desc:'Ancient spirit of wood and wild. Grants nature affinity, animal bond, and rapid healing.',powers:['Thornwall (defense)','Nature Bond (animals)','Regrowth (regen)'],potions:[{name:'Herb Brew L1',eff:'+30 HP, night vision',icon:'🌿'},{name:'Herb Brew L2',eff:'+60 HP, camouflage',icon:'🍃'},{name:'Elixir of Sylvanus',eff:'Unlimited HP regen 45s',icon:'🌳'}]},
+  tech:{id:'tech',name:'Tech God — Mechanis',icon:'⚙️',col:'#9b59b6',desc:'God of invention and machinery. Grants gadget mastery, energy shields, and enhanced tools.',powers:['Energy Shield','Gadget Overcharge','Machine Mind (blueprints)'],potions:[{name:'Circuit Brew L1',eff:'+30 HP, speed boost',icon:'⚡'},{name:'Circuit Brew L2',eff:'+60 HP, shield charge',icon:'🔋'},{name:'Elixir of Mechanis',eff:'All stats max 60s',icon:'⚙️'}]}
+};
+
+// ════════════════════════════════════════════════════════════════════
+//  NPC SYSTEM  (procedurally generated from seed)
+// ════════════════════════════════════════════════════════════════════
+const NPC_NAMES=['Aiden','Mira','Torv','Selene','Bran','Lyra','Cael','Nara','Oswin','Vesper','Aldric','Freya','Daven','Sola','Kiran'];
+const NPC_JOBS=['Villager','Merchant','Guard','Priest','Scholar','Traveler','Farmer','Blacksmith','Herbalist','Fisher'];
+const NPC_TYPES=['villager','merchant','guard','priest','scholar'];
+
+function generateNPC(seed,kingdom){
+  const r=rng32(seed);
+  const nameIdx=Math.floor(r()*NPC_NAMES.length);
+  const jobIdx=Math.floor(r()*NPC_JOBS.length);
+  const k=KINGDOMS[kingdom];
+  return{name:NPC_NAMES[nameIdx],job:NPC_JOBS[jobIdx],kingdom,icon:k.icon,type:NPC_TYPES[Math.floor(r()*NPC_TYPES.length)],rep:Math.floor(r()*20-5)};
+}
+
+// Near-player NPC encounter
+let nearNPC=null;
+let npcEncounterTimer=0;
+const NPC_ENCOUNTER_INTERVAL=60; // seconds
+
+function tickNPCEncounters(dt){
+  npcEncounterTimer-=dt;
+  if(npcEncounterTimer<=0){
+    npcEncounterTimer=NPC_ENCOUNTER_INTERVAL*(0.8+Math.random()*0.4);
+    const kd=getKingdom(ppos.x,ppos.z);
+    const seed=(Math.floor(ppos.x/10)*7919^Math.floor(ppos.z/10)*48611)>>>0;
+    nearNPC=generateNPC(seed,kd);
+    document.getElementById('ipr').style.display='block';
+    document.getElementById('ipr').textContent=`[ E ] Talk to ${nearNPC.name} the ${nearNPC.job}`;
+    setTimeout(()=>{if(!dlgOpen)document.getElementById('ipr').style.display='none';},5000);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  DIALOGUE SYSTEM
+// ════════════════════════════════════════════════════════════════════
+let dlgOpen=false;
+const DIALOGUES={
+  villager:["Life is peaceful here in the {kingdom}. Though I heard rumblings of war to the east…","Have you spoken to the priest at the temple? They say the gods grow restless.","Travelers are rare here. Stay safe on the roads — bandits lurk in the hills."],
+  merchant:["I trade goods across all four kingdoms. Reputation matters more than gold here.","Looking for supplies? I can trade if you have resources.","The {kingdom} produces the finest {resource}. Worth its weight in gold."],
+  guard:["Halt, stranger. State your business in {kingdom}.","You're either very brave or very lost to wander these lands alone.","The King has posted bounties on the mountain bandits. Good coin if you're interested."],
+  priest:["The gods have chosen this land for a reason. Have you felt their call?","Should you seek divine power, visit the temple in the capital.","Not all who wander are lost… but most are."],
+  scholar:["Fascinating! I've been mapping the kingdom borders. The FBM noise patterns reveal much.","The ancient temples predate the kingdoms themselves, you know.","There are four endings to this world's story. Only the truly aware find them all."]
+};
+function getDialogue(npc){const lines=DIALOGUES[npc.type]||DIALOGUES.villager;const line=lines[Math.floor(Math.random()*lines.length)];const k=KINGDOMS[npc.kingdom];return line.replace('{kingdom}',k.name).replace('{resource}',k.resources.split('·')[0].trim());}
+function showDialogue(npc){dlgOpen=true;document.getElementById('dlg-box').style.display='block';document.getElementById('dlg-npc').textContent=`${npc.icon} ${npc.name} — ${npc.job}`;document.getElementById('dlg-text').textContent=getDialogue(npc);const ch=document.getElementById('dlg-choices');const choices=buildChoices(npc);ch.innerHTML=choices.map((c,i)=>`<div class="dchoice" onclick="pickChoice(${i})">${c.text}</div>`).join('');window._dlgChoices=choices;window._dlgNPC=npc;}
+function buildChoices(npc){const base=[{text:'What can you tell me about this kingdom?',cb:()=>showKingdomInfo(npc)},{text:'Any quests available?',cb:()=>{closeDlg();acceptRandomQuest(npc);}},{text:'Farewell.',cb:()=>closeDlg()}];if(npc.type==='merchant')base.splice(1,0,{text:'Trade resources.',cb:()=>tradeResources(npc)});if(npc.type==='priest')base.splice(1,0,{text:'Tell me about the gods.',cb:()=>{closeDlg();openModal('god-modal');}});return base;}
+function pickChoice(i){const c=window._dlgChoices[i];if(c&&c.cb)c.cb();}
+function showKingdomInfo(npc){const k=KINGDOMS[npc.kingdom];document.getElementById('dlg-text').textContent=`The ${k.name} controls ${k.terrain}. We produce ${k.resources}. Our army numbers ${k.military} thousand strong.`;const ch=document.getElementById('dlg-choices');ch.innerHTML=`<div class="dchoice" onclick="closeDlg()">I see. Thank you.</div><div class="dchoice" onclick="gainRep('${npc.kingdom}',5)">Compliment the kingdom (+5 rep)</div>`;}
+function closeDlg(){dlgOpen=false;document.getElementById('dlg-box').style.display='none';document.getElementById('ipr').style.display='none';}
+function tradeResources(npc){const k=KINGDOMS[npc.kingdom];addToast(`${npc.name} traded 3x ${k.resources.split('·')[0].trim()} for your stone.`);addItem({id:'trade_res',name:k.resources.split('·')[0].trim().toLowerCase().replace(' ','_'),icon:k.icon,cat:'resources',rar:'ri',qty:3});closeDlg();}
+
+// ════════════════════════════════════════════════════════════════════
+//  QUEST SYSTEM
+// ════════════════════════════════════════════════════════════════════
+const QUEST_POOL=[
+  {id:'q1',title:'The Missing Merchant',type:'main',tag:'qt-main',desc:'A merchant vanished on the road between kingdoms. Investigate the last known location.',reward:'500 XP · Iron Sword',done:false,accepted:false},
+  {id:'q2',title:'Sun Crystal Collection',type:'kingdom',tag:'qt-king',kingdom:'sun',desc:'Gather 5 Sun Crystals from the desert for the Sun Kingdom\'s temple ritual.',reward:'200 XP · Gold Ore x3',done:false,accepted:false},
+  {id:'q3',title:'Forest Herb Medicine',type:'village',tag:'qt-vill',desc:'The village healer needs 8 Forest Herbs to cure a sickness spreading through the town.',reward:'150 XP · Health Potion x2',done:false,accepted:false},
+  {id:'q4',title:'Trial of the Sun God',type:'god',tag:'qt-god',kingdom:'sun',desc:'Prove your worth to the Sun God by surviving 3 days in the desert without shelter.',reward:'God Favor · Solar Draft L2',done:false,accepted:false},
+  {id:'q5',title:'Bandit Bounty',type:'bounty',tag:'qt-boun',desc:'The Kingdom of Tech has placed a bounty on the mountain bandits. Defeat 5 of them.',reward:'300 XP · 50 Gold',done:false,accepted:false},
+  {id:'q6',title:'Ancient Temple Map',type:'exploration',tag:'qt-expl',desc:'An old map leads to a hidden temple deep in the forest. Find it and bring back a relic.',reward:'400 XP · Ancient Relic',done:false,accepted:false},
+  {id:'q7',title:'Leviathan\'s Wrath',type:'main',tag:'qt-main',desc:'The sea monster Leviathan has been spotted near the Water Kingdom\'s harbor. Warn the captain.',reward:'600 XP · Pearl Armor',done:false,accepted:false},
+  {id:'q8',title:'Tech Kingdom Spy',type:'kingdom',tag:'qt-king',kingdom:'tech',desc:'The Tech Kingdom suspects a spy in their factory. Investigate and report back to the Commander.',reward:'350 XP · Energy Crystal',done:false,accepted:false},
+  {id:'q9',title:'The Four God Prophecy',type:'main',tag:'qt-main',desc:'A scholar speaks of an ancient prophecy involving all four gods. Gather four divine relics.',reward:'800 XP · Prophecy Fragment',done:false,accepted:false},
+  {id:'q10',title:'Elder Treant\'s Grove',type:'exploration',tag:'qt-expl',desc:'Locals whisper of a living tree the size of a mountain. Find the Elder Treant\'s Grove.',reward:'500 XP · Wood Relic',done:false,accepted:false},
+];
+let activeQuests=[];
+let currentQuestFilter='active';
+function acceptRandomQuest(npc){const available=QUEST_POOL.filter(q=>!q.accepted&&!q.done);if(!available.length){addToast('No new quests available.');return;}const q=available[Math.floor(Math.random()*available.length)];q.accepted=true;activeQuests.push(q);addToast(`New Quest: "${q.title}"`);gainXP(50);}
+function acceptQuest(id){const q=QUEST_POOL.find(q=>q.id===id);if(!q||q.accepted)return;q.accepted=true;activeQuests.push(q);addToast(`Quest Accepted: "${q.title}"`);gainXP(50);renderQuests();}
+function completeQuest(id){const q=activeQuests.find(q=>q.id===id);if(!q)return;q.done=true;activeQuests=activeQuests.filter(aq=>aq.id!==id);gainXP(200);addToast(`✅ Quest Complete: "${q.title}" — ${q.reward}`);}
+
+// ════════════════════════════════════════════════════════════════════
+//  SURVIVAL SYSTEM
+// ════════════════════════════════════════════════════════════════════
+const survival={hunger:80,maxHunger:100,thirst:100,maxThirst:100,sleep:90,maxSleep:100,temperature:20};
+function tickSurvival(dt){
+  const biome=getBiome(ppos.x,ppos.z);
+  survival.hunger=Math.max(0,survival.hunger-0.4*dt);
+  survival.thirst=Math.max(0,survival.thirst-0.6*dt);
+  survival.sleep=Math.max(0,survival.sleep-0.2*dt);
+  if(biome==='desert')survival.temperature=Math.min(45,survival.temperature+0.5*dt);
+  else survival.temperature=Math.max(10,survival.temperature-0.1*dt);
+  // Effects
+  if(survival.hunger<20)player.sta=Math.max(0,player.sta-5*dt);
+  if(survival.thirst<20){player.hp=Math.max(1,player.hp-2*dt);player.sta=Math.max(0,player.sta-8*dt);}
+  if(survival.temperature>40)player.hp=Math.max(1,player.hp-3*dt);
+  updateSurvivalHUD();
+}
+function updateSurvivalHUD(){document.getElementById('hgbf').style.width=(survival.hunger/survival.maxHunger*100)+'%';document.getElementById('thbf').style.width=(survival.thirst/survival.maxThirst*100)+'%';document.getElementById('slpbf').style.width=(survival.sleep/survival.maxSleep*100)+'%';}
+function eatFood(name,hungerRestore,hpRestore){survival.hunger=Math.min(survival.maxHunger,survival.hunger+hungerRestore);player.hp=Math.min(player.maxHp,player.hp+hpRestore);addToast(`Ate ${name} — Hunger +${hungerRestore}, HP +${hpRestore}`);}
+function drinkWater(amount){survival.thirst=Math.min(survival.maxThirst,survival.thirst+amount);addToast(`Drank water — Thirst +${amount}`);}
+function sleep(){survival.sleep=survival.maxSleep;player.hp=Math.min(player.maxHp,player.hp+30);player.sta=player.maxSta;addToast('Slept well. HP restored, stamina full.');}
+
+// ════════════════════════════════════════════════════════════════════
+//  WEATHER SYSTEM
+// ════════════════════════════════════════════════════════════════════
+const WEATHERS=[{name:'Clear',icon:'☀️',fogMult:1.0,tempMod:0},{name:'Rain',icon:'🌧️',fogMult:0.7,tempMod:-5},{name:'Storm',icon:'⛈️',fogMult:0.5,tempMod:-8},{name:'Heatwave',icon:'🔥',fogMult:1.0,tempMod:+12},{name:'Fog',icon:'🌫️',fogMult:0.4,tempMod:-2}];
+let currentWeather=WEATHERS[0];let weatherTimer=120;
+function tickWeather(dt){weatherTimer-=dt;if(weatherTimer<=0){weatherTimer=90+Math.random()*120;currentWeather=WEATHERS[Math.floor(Math.random()*WEATHERS.length)];addToast(`Weather: ${currentWeather.icon} ${currentWeather.name}`);document.getElementById('weather-pill').textContent=`${currentWeather.icon} ${currentWeather.name}`;}survival.temperature+=currentWeather.tempMod*dt*0.01;}
+
+// ════════════════════════════════════════════════════════════════════
+//  WAR SYSTEM
+// ════════════════════════════════════════════════════════════════════
+let warTimer=300;
+function tickWar(dt){warTimer-=dt;if(warTimer<=0){warTimer=200+Math.random()*300;const kkeys=Object.keys(KINGDOMS);const k1=kkeys[Math.floor(Math.random()*kkeys.length)];let k2=kkeys[Math.floor(Math.random()*kkeys.length)];while(k2===k1)k2=kkeys[Math.floor(Math.random()*kkeys.length)];if(!KINGDOMS[k1].atWarWith.includes(k2)){KINGDOMS[k1].atWarWith.push(k2);KINGDOMS[k2].atWarWith.push(k1);document.getElementById('warbanner').style.display='block';document.getElementById('warbanner').textContent=`⚔️ ${KINGDOMS[k1].name} declared war on ${KINGDOMS[k2].name}!`;setTimeout(()=>document.getElementById('warbanner').style.display='none',5000);addToast(`War! ${KINGDOMS[k1].name} vs ${KINGDOMS[k2].name}`);}}}
+
+// ════════════════════════════════════════════════════════════════════
+//  REPUTATION SYSTEM
+// ════════════════════════════════════════════════════════════════════
+function gainRep(kingdom,amount){KINGDOMS[kingdom].rep=Math.min(100,KINGDOMS[kingdom].rep+amount);addToast(`${KINGDOMS[kingdom].icon} ${KINGDOMS[kingdom].name} reputation +${amount} → ${repLabel(kingdom)}`);updateRepHUD();}
+function loseRep(kingdom,amount){KINGDOMS[kingdom].rep=Math.max(-100,KINGDOMS[kingdom].rep-amount);addToast(`${KINGDOMS[kingdom].icon} ${KINGDOMS[kingdom].name} reputation -${amount} → ${repLabel(kingdom)}`);updateRepHUD();}
+function updateRepHUD(){const currentK=getKingdom(ppos.x,ppos.z);const k=KINGDOMS[currentK];document.getElementById('rep-pill').textContent=`${k.icon} ${repLabel(currentK)}`;document.getElementById('rep-pill').style.color=repColor(currentK);}
+
+// ════════════════════════════════════════════════════════════════════
+//  PLAYER STATE  (full RPG stats)
+// ════════════════════════════════════════════════════════════════════
+const player={
+  hp:100,maxHp:100,sta:100,maxSta:100,armor:0,maxArmor:100,
+  xp:0,maxXp:1000,level:1,
+  chosenGod:null,
+  suit:'basic',sprinting:false,
+  inv:[
+    {id:'basic_tool',name:'Basic Tool',  icon:'⛏️', cat:'weapons',  rar:'rc',qty:1,equip:true},
+    {id:'wood',      name:'Oak Wood',    icon:'🪵', cat:'resources', rar:'rc',qty:5},
+    {id:'stone',     name:'Stone',       icon:'🪨', cat:'resources', rar:'rc',qty:8},
+    {id:'herb',      name:'Forest Herb', icon:'🌿', cat:'resources', rar:'rc',qty:3},
+    {id:'water_f',   name:'Water Flask', icon:'💧', cat:'food',      rar:'rc',qty:2},
+    {id:'ration',    name:'Travel Ration',icon:'🍖',cat:'food',      rar:'rc',qty:3},
+  ],
+  equip:{weapon:'basic_tool'},invTab:'all',
+  currentKingdom:'none',questFilter:'active'
+};
+
+function gainXP(amt){player.xp+=amt;if(player.xp>=player.maxXp){player.level++;player.xp-=player.maxXp;player.maxXp=Math.floor(player.maxXp*1.5);addToast(`🎉 Level Up! Now Level ${player.level}!`);}updateHUDBars();}
+function addItem(item){const ex=player.inv.find(i=>i.id===item.id);if(ex){ex.qty=(ex.qty||1)+(item.qty||1);}else{player.inv.push({...item});}if(document.getElementById('inv-modal').style.display==='flex')renderInv();}
+
+// ════════════════════════════════════════════════════════════════════
+//  CRAFTING SYSTEM
+// ════════════════════════════════════════════════════════════════════
+const RECIPES={
+  tools:[
+    {id:'r_axe',    name:'Iron Axe',     icon:'🪓',cat:'tools',   req:{iron:2,wood:3},   result:{id:'iron_axe',name:'Iron Axe',icon:'🪓',cat:'weapons',rar:'ri',qty:1}},
+    {id:'r_pick',   name:'Iron Pickaxe', icon:'⛏️', cat:'tools',   req:{iron:3,wood:2},   result:{id:'iron_pick',name:'Iron Pickaxe',icon:'⛏️',cat:'weapons',rar:'ri',qty:1}},
+  ],
+  weapons:[
+    {id:'r_sword',  name:'Iron Sword',   icon:'⚔️', cat:'weapons', req:{iron:4,wood:1},   result:{id:'iron_sword',name:'Iron Sword',icon:'⚔️',cat:'weapons',rar:'ri',qty:1}},
+    {id:'r_bow',    name:'Hunter Bow',   icon:'🏹', cat:'weapons', req:{wood:6,herb:2},   result:{id:'bow',name:'Hunter Bow',icon:'🏹',cat:'weapons',rar:'ri',qty:1}},
+    {id:'r_staff',  name:'Magic Staff',  icon:'🪄', cat:'weapons', req:{wood:4,crystal:2},result:{id:'staff',name:'Magic Staff',icon:'🪄',cat:'weapons',rar:'re',qty:1}},
+  ],
+  armor:[
+    {id:'r_larmor', name:'Leather Armor',icon:'🥋', cat:'armor',   req:{herb:5,wood:3},   result:{id:'l_armor',name:'Leather Armor',icon:'🥋',cat:'armor',rar:'rc',qty:1}},
+    {id:'r_iarmor', name:'Iron Armor',   icon:'🛡️', cat:'armor',   req:{iron:6,wood:2},   result:{id:'i_armor',name:'Iron Armor',icon:'🛡️',cat:'armor',rar:'ri',qty:1}},
+  ],
+  camp:[
+    {id:'r_fire',   name:'Campfire',     icon:'🔥', cat:'camp',    req:{wood:5,stone:3},  result:{id:'campfire',name:'Campfire',icon:'🔥',cat:'camp',rar:'rc',qty:1}},
+    {id:'r_bed',    name:'Bedroll',      icon:'🛏️', cat:'camp',    req:{herb:4,wood:3},   result:{id:'bedroll',name:'Bedroll',icon:'🛏️',cat:'camp',rar:'rc',qty:1}},
+    {id:'r_chest',  name:'Storage Chest',icon:'📦', cat:'camp',    req:{wood:8,iron:2},   result:{id:'chest',name:'Storage Chest',icon:'📦',cat:'camp',rar:'rc',qty:1}},
+    {id:'r_pot',    name:'Cooking Pot',  icon:'🍲', cat:'camp',    req:{iron:4,stone:2},  result:{id:'cook_pot',name:'Cooking Pot',icon:'🍲',cat:'camp',rar:'ri',qty:1}},
+  ],
+  cooking:[
+    {id:'r_meal',   name:'Cooked Meal',  icon:'🍗', cat:'cooking', req:{ration:2},        result:{id:'cooked_meal',name:'Cooked Meal',icon:'🍗',cat:'food',rar:'rc',qty:2}},
+    {id:'r_fish',   name:'Grilled Fish', icon:'🐟', cat:'cooking', req:{fish:3,wood:1},   result:{id:'grilled_fish',name:'Grilled Fish',icon:'🐟',cat:'food',rar:'rc',qty:2}},
+  ],
+  potions:[
+    {id:'r_hpot',   name:'Health Potion',icon:'🧪', cat:'potions', req:{herb:3,water_f:1},result:{id:'hpot',name:'Health Potion',icon:'🧪',cat:'potions',rar:'ri',qty:1}},
+    {id:'r_spot',   name:'Stamina Brew', icon:'⚗️', cat:'potions', req:{herb:2,crystal:1},result:{id:'spot',name:'Stamina Brew',icon:'⚗️',cat:'potions',rar:'ri',qty:1}},
+  ]
+};
+let currentCraftCat='tools';
+function hasItems(req){return Object.entries(req).every(([id,qty])=>{const it=player.inv.find(i=>i.id===id);return it&&it.qty>=qty;});}
+function consumeItems(req){Object.entries(req).forEach(([id,qty])=>{const it=player.inv.find(i=>i.id===id);if(it)it.qty-=qty;});player.inv=player.inv.filter(i=>i.qty>0);}
+function craftItem(recipeId){let recipe=null;Object.values(RECIPES).flat().forEach(r=>{if(r.id===recipeId)recipe=r;});if(!recipe)return;if(!hasItems(recipe.req)){addToast('Not enough materials!');return;}consumeItems(recipe.req);addItem(recipe.result);addToast(`Crafted: ${recipe.icon} ${recipe.name}`);gainXP(30);renderCraft();}
+
+// ════════════════════════════════════════════════════════════════════
+//  CAMP SYSTEM
+// ════════════════════════════════════════════════════════════════════
+const CAMP_ACTIONS=[
+  {icon:'🔥',name:'Light Campfire',desc:'Warms you and cooks food.',action:()=>{survival.temperature=20;addToast('Campfire lit — warm and safe.');}},
+  {icon:'🛏️',name:'Sleep (Bedroll)',desc:'Restores stamina, HP, and sleep.',action:()=>{sleep();}},
+  {icon:'🍲',name:'Cook Meal',desc:'Turn raw food into cooked food (+hunger restore).',action:()=>{if(hasItems({ration:1})){consumeItems({ration:1});addItem({id:'cooked_meal',name:'Cooked Meal',icon:'🍗',cat:'food',rar:'rc',qty:1});addToast('Cooked a meal!');}else{addToast('Need a Ration to cook.');}}},
+  {icon:'💧',name:'Drink Water',desc:'Restores 40 thirst.',action:()=>{drinkWater(40);}},
+  {icon:'🍖',name:'Eat Ration',desc:'Restores 25 hunger, 10 HP.',action:()=>{if(hasItems({ration:1})){consumeItems({ration:1});eatFood('Ration',25,10);}else{addToast('No rations left.');}}},
+];
+
+// ════════════════════════════════════════════════════════════════════
+//  MODAL SYSTEM
+// ════════════════════════════════════════════════════════════════════
+function openModal(id){document.getElementById(id).style.display='flex';if(mlocked)document.exitPointerLock();renderModal(id);}
+function closeModal(id){document.getElementById(id).style.display='none';}
+function closeAllModals(){document.querySelectorAll('.modal').forEach(m=>m.style.display='none');}
+function renderModal(id){
+  if(id==='inv-modal')renderInv();
+  else if(id==='quest-modal')renderQuests();
+  else if(id==='god-modal')renderGods();
+  else if(id==='kingdom-modal')renderKingdoms();
+  else if(id==='craft-modal')renderCraft();
+  else if(id==='camp-modal')renderCamp();
+}
+// Inventory
+let invCat='all';
+function invTab(el,cat){document.querySelectorAll('#inv-modal .mtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');invCat=cat;renderInv();}
+function renderInv(){const items=invCat==='all'?player.inv:player.inv.filter(i=>i.cat===invCat);document.getElementById('inv-grid').innerHTML=items.length?items.map(it=>`<div class="isl ${it.rar}${player.equip.weapon===it.id?' eq':''}" onclick="useItem('${it.id}')"><div class="ico">${it.icon}</div><div class="nm">${it.name}</div>${(it.qty||1)>1?`<div class="qty">×${it.qty}</div>`:''}</div>`).join(''):'<div style="color:rgba(255,255,255,0.25);font-size:11px;padding:20px;text-align:center;">Empty</div>';}
+function useItem(id){const it=player.inv.find(i=>i.id===id);if(!it)return;if(it.cat==='weapons')player.equip.weapon=id;else if(it.cat==='food'){eatFood(it.name,25,10);it.qty--;if(it.qty<=0)player.inv=player.inv.filter(i=>i.id!==id);}else if(it.cat==='potions'){player.hp=Math.min(player.maxHp,player.hp+40);addToast(`Used ${it.name}: +40 HP`);it.qty--;if(it.qty<=0)player.inv=player.inv.filter(i=>i.id!==id);}renderInv();updateHUDBars();}
+// Quests
+function questTab(el,cat){document.querySelectorAll('#quest-modal .mtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');currentQuestFilter=cat;renderQuests();}
+function renderQuests(){const pool=currentQuestFilter==='done'?QUEST_POOL.filter(q=>q.done):currentQuestFilter==='active'?activeQuests:QUEST_POOL.filter(q=>q.type===currentQuestFilter&&!q.done);document.getElementById('quest-list').innerHTML=pool.length?pool.map(q=>`<div class="qcard${q.done?' done':''}"><div class="qtitle">${q.title}</div><div class="qdesc">${q.desc}</div><span class="qtag ${q.tag}">${q.type.toUpperCase()}</span><div class="qrew">Reward: ${q.reward}</div>${!q.accepted&&!q.done?`<button class="craft-btn" style="margin-top:7px" onclick="acceptQuest('${q.id}')">Accept</button>`:''}${q.accepted&&!q.done?`<button class="craft-btn" style="margin-top:7px;background:rgba(46,204,113,0.2);border-color:#2ecc71;color:#2ecc71" onclick="completeQuest('${q.id}')">Mark Complete</button>`:''}</div>`).join(''):'<div style="color:rgba(255,255,255,0.22);font-size:11px;padding:20px;text-align:center;">No quests here.</div>';}
+// Gods
+function renderGods(){document.getElementById('god-list').innerHTML=Object.values(GODS).map(g=>`<div class="gcard${player.chosenGod===g.id?' chosen':''}" onclick="chooseGod('${g.id}')"><div class="gico">${g.icon}</div><div class="ginf"><div class="gname" style="color:${g.col}">${g.name}</div><div class="gdesc">${g.desc}</div><div class="gpow">${g.powers.map(p=>`<span class="gpill">${p}</span>`).join('')}</div><div style="margin-top:7px;font-size:8px;color:rgba(255,255,255,0.3)">Potions: ${g.potions.map(p=>`${p.icon}${p.name}`).join(' · ')}</div></div>${player.chosenGod===g.id?'<span style="color:#f39c12;font-size:10px;font-weight:700">CHOSEN</span>':''}</div>`).join('');}
+function chooseGod(id){if(player.chosenGod){addToast('Your covenant is sealed. You cannot change gods.');return;}player.chosenGod=id;const g=GODS[id];addItem({id:`${id}_potion_l1`,name:g.potions[0].name,icon:g.potions[0].icon,cat:'potions',rar:'ri',qty:2});document.getElementById('g-nm').textContent=`${g.icon} ${g.name}`;document.getElementById('g-nm').style.color=g.col;addToast(`⚡ Divine Covenant: ${g.name}`);gainXP(200);renderGods();}
+// Kingdoms
+let kTabFilter='overview';
+function kTab(el,cat){document.querySelectorAll('#kingdom-modal .mtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');kTabFilter=cat;renderKingdoms();}
+function renderKingdoms(){const el=document.getElementById('kingdom-list');if(kTabFilter==='overview'){el.innerHTML=Object.values(KINGDOMS).map(k=>`<div class="kcard"><div class="kname" style="color:${k.col}">${k.icon} ${k.name}</div><div class="kstat">Terrain: ${k.terrain}<br>Resources: ${k.resources}<br>Structures: ${k.structures}<br>Army: ${k.military}k · Pop: ${k.pop.toLocaleString()} · Economy: ${k.economy}%<br>Boss: ⚔️ ${k.boss}</div><div class="repbar"><div class="repfill" style="width:${(k.rep+100)/2}%;background:${repColor(k.id)}"></div></div><div style="font-size:8px;color:${repColor(k.id)};margin-top:3px">${repLabel(k.id)}</div><div style="margin-top:6px;display:flex;gap:6px"><button class="craft-btn" onclick="gainRep('${k.id}',10)">Offer Aid (+10 rep)</button><button class="craft-btn" style="background:rgba(231,76,60,0.15);border-color:#e74c3c;color:#e74c3c" onclick="loseRep('${k.id}',5)">Provoke (-5 rep)</button></div></div>`).join('');}else if(kTabFilter==='relations'){el.innerHTML='<div class="kstat" style="padding:8px;color:rgba(255,255,255,0.5);font-size:10px;line-height:2">'+Object.values(KINGDOMS).map(k=>`${k.icon} ${k.name}: at war with ${k.atWarWith.length?k.atWarWith.map(w=>KINGDOMS[w]?.icon+' '+KINGDOMS[w]?.name).join(', '):'nobody'}`).join('<br>')+'</div>';}else{el.innerHTML='<div style="padding:12px"><div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:10px">Declare or end wars between kingdoms:</div>'+Object.values(KINGDOMS).map(k=>`<div class="kcard"><div class="kname" style="color:${k.col}">${k.icon} ${k.name}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${Object.values(KINGDOMS).filter(k2=>k2.id!==k.id).map(k2=>`<button class="craft-btn" onclick="declareWar('${k.id}','${k2.id}')" style="${k.atWarWith.includes(k2.id)?'background:rgba(231,76,60,0.2);border-color:#e74c3c;color:#e74c3c':''}">⚔️ vs ${k2.icon}</button>`).join('')}</div></div>`).join('')+'</div>';}}
+function declareWar(k1,k2){if(KINGDOMS[k1].atWarWith.includes(k2)){KINGDOMS[k1].atWarWith=KINGDOMS[k1].atWarWith.filter(k=>k!==k2);KINGDOMS[k2].atWarWith=KINGDOMS[k2].atWarWith.filter(k=>k!==k1);addToast(`Peace declared: ${KINGDOMS[k1].name} & ${KINGDOMS[k2].name}`);}else{KINGDOMS[k1].atWarWith.push(k2);KINGDOMS[k2].atWarWith.push(k1);addToast(`⚔️ War: ${KINGDOMS[k1].name} vs ${KINGDOMS[k2].name}`);}renderKingdoms();}
+// Crafting
+function craftTab(el,cat){document.querySelectorAll('#craft-modal .mtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');currentCraftCat=cat;renderCraft();}
+function renderCraft(){const recipes=RECIPES[currentCraftCat]||[];document.getElementById('craft-list').innerHTML=recipes.map(r=>{const canCraft=hasItems(r.req);const reqStr=Object.entries(r.req).map(([id,qty])=>{const it=player.inv.find(i=>i.id===id);const have=it?it.qty:0;return`${id.replace('_',' ')} ${have}/${qty}`;}).join(' · ');return`<div class="craft-row"><div class="craft-ico">${r.result.icon}</div><div class="craft-inf"><div class="craft-nm">${r.name}</div><div class="craft-req">Requires: ${reqStr}</div></div><button class="craft-btn" onclick="craftItem('${r.id}')" ${canCraft?'':'disabled style="opacity:0.4"'}>Craft</button></div>`;}).join('');}
+// Camp
+function renderCamp(){document.getElementById('camp-list').innerHTML=CAMP_ACTIONS.map((a,i)=>`<div class="camp-row" onclick="doCampAction(${i})"><div class="craft-ico">${a.icon}</div><div class="craft-inf"><div class="craft-nm">${a.name}</div><div class="craft-req">${a.desc}</div></div></div>`).join('');}
+function doCampAction(i){CAMP_ACTIONS[i].action();}
+
+// ════════════════════════════════════════════════════════════════════
+//  HUD UPDATE
+// ════════════════════════════════════════════════════════════════════
+function updateHUDBars(){document.getElementById('hpb').style.width=(player.hp/player.maxHp*100)+'%';document.getElementById('stb').style.width=(player.sta/player.maxSta*100)+'%';document.getElementById('hgb').style.width=(survival.hunger/survival.maxHunger*100)+'%';document.getElementById('thb').style.width=(survival.thirst/survival.maxThirst*100)+'%';document.getElementById('xpb').style.width=(player.xp/player.maxXp*100)+'%';}
+
+// ════════════════════════════════════════════════════════════════════
+//  TOAST NOTIFICATION
+// ════════════════════════════════════════════════════════════════════
+let toastTimer=null;
+function addToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',3200);}
+
+// ════════════════════════════════════════════════════════════════════
+//  INTERACTION
+// ════════════════════════════════════════════════════════════════════
+function tryInteract(){if(dlgOpen){closeDlg();return;}if(nearNPC){showDialogue(nearNPC);return;}// Generic interact
+addToast('Nothing nearby to interact with.');}
+function doJump(){pJumpBuf=0.22;}
+function startSprint(){player.sprinting=true;}
+function stopSprint(){player.sprinting=false;}
+
+// ════════════════════════════════════════════════════════════════════
+//  SUITS (unchanged structure)
+// ════════════════════════════════════════════════════════════════════
+const SUITS={basic:{spd:9,jump:JUMP_FORCE,def:1.0,sta:1.0},speed:{spd:16,jump:JUMP_FORCE+2,def:0.7,sta:1.5},heavy:{spd:5,jump:JUMP_FORCE-3,def:2.8,sta:0.55},tech:{spd:10,jump:JUMP_FORCE+1,def:1.3,sta:1.0},fly:{spd:12,jump:JUMP_FORCE+18,def:0.9,sta:1.1}};
+
+// ════════════════════════════════════════════════════════════════════
+//  PLAYER MOVEMENT  (unchanged physics)
+// ════════════════════════════════════════════════════════════════════
+function updatePlayer(dt){dt=Math.min(dt,0.05);const suit=SUITS[player.suit]||SUITS.basic;let mx=0,mz=0;if(keys['KeyW']||keys['ArrowUp'])mz-=1;if(keys['KeyS']||keys['ArrowDown'])mz+=1;if(keys['KeyA']||keys['ArrowLeft'])mx-=1;if(keys['KeyD']||keys['ArrowRight'])mx+=1;mx+=JOY.x;mz+=JOY.y;const mlen=Math.sqrt(mx*mx+mz*mz);if(mlen>1){mx/=mlen;mz/=mlen;}const moving=mlen>0.05;const sprint=(isSprinting||player.sprinting)&&player.sta>3&&moving;const spd=suit.spd*(sprint?1.8:1.0);if(sprint)player.sta=Math.max(0,player.sta-26*suit.sta*dt);else player.sta=Math.min(player.maxSta,player.sta+14*suit.sta*dt);const g=probeGround(ppos.x,ppos.z);pGroundY=g.groundY;pSlope=g.slope;const sinY=Math.sin(camYaw),cosY=Math.cos(camYaw);const wx=mx*cosY-mz*sinY,wz=mx*sinY+mz*cosY;const accel=pGround?18:6;const tvx=wx*spd,tvz=wz*spd;if(pGround&&pSlope>5&&pSlope<MAX_SLOPE){const dot=tvx*g.nx+tvz*g.nz;pvel.x+=(tvx-dot*g.nx-pvel.x)*accel*dt;pvel.z+=(tvz-dot*g.nz-pvel.z)*accel*dt;}else{pvel.x+=(tvx-pvel.x)*accel*dt;pvel.z+=(tvz-pvel.z)*accel*dt;}if(!pGround||pvel.y>0)pvel.y+=GRAVITY*(pvel.y<0?FALL_M:1.0)*dt;if(player.suit==='fly'&&(keys['Space']||isSprinting)&&player.sta>1){pvel.y+=58*dt;player.sta=Math.max(0,player.sta-20*dt);}if(pJumpBuf>0)pJumpBuf-=dt;if(pGround)pCoyote=0.16;else pCoyote=Math.max(0,pCoyote-dt);if(pJumpBuf>0&&pCoyote>0){pvel.y=suit.jump;pJumpBuf=0;pCoyote=0;pGround=false;}if(pGround&&pSlope>MAX_SLOPE){pvel.x+=g.nx*6*dt;pvel.z+=g.nz*6*dt;}ppos.x+=pvel.x*dt;ppos.y+=pvel.y*dt;ppos.z+=pvel.z*dt;if(ppos.y<=pGroundY){ppos.y=pGroundY;pvel.y=0;pGround=true;}else if(ppos.y>pGroundY+0.08){pGround=false;}if(pGround&&!moving){pvel.x*=Math.pow(0.1,dt*10);pvel.z*=Math.pow(0.1,dt*10);}
+yawD*=0.78;pitchD*=0.78;camYaw+=yawD;camPitch=Math.max(-1.2,Math.min(0.6,camPitch+pitchD));const tD=sprint?6.2:5.0;camDist+=(tD-camDist)*7*dt;const cp=Math.cos(camPitch),sp=Math.sin(camPitch);const cSY=Math.sin(camYaw),cCY=Math.cos(camYaw);camera.position.set(ppos.x+cSY*cp*camDist,ppos.y-sp*camDist+0.4,ppos.z+cCY*cp*camDist);camera.lookAt(ppos.x,ppos.y+1.5,ppos.z);const tFOV=sprint?78:70;camera.fov+=(tFOV-camera.fov)*5*dt;camera.updateProjectionMatrix();}
+
+// ════════════════════════════════════════════════════════════════════
+//  FRUSTUM CULLING
+// ════════════════════════════════════════════════════════════════════
+const frustum=new THREE.Frustum(),fmat=new THREE.Matrix4();
+function cullChunks(){fmat.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);frustum.setFromProjectionMatrix(fmat);for(const[,{mesh}]of chunks)mesh.visible=frustum.intersectsObject(mesh);}
+
+// ════════════════════════════════════════════════════════════════════
+//  DEBUG PANEL
+// ════════════════════════════════════════════════════════════════════
+let fpsAcc=0,fpsN=0,dispFPS=60;
+function updateDebug(dt){fpsN++;fpsAcc+=dt;if(fpsAcc>=0.5){dispFPS=Math.round(fpsN/fpsAcc);fpsN=0;fpsAcc=0;}const dc=renderer.info.render.calls;const currentK=getKingdom(ppos.x,ppos.z);const kd=KINGDOMS[currentK];document.getElementById('dbg').innerHTML=`<b style="color:#4dd9ff">DEBUG</b><br>POS X:${ppos.x.toFixed(0)} Y:${ppos.y.toFixed(0)} Z:${ppos.z.toFixed(0)}<br>JOY X:${JOY.x.toFixed(2)} Y:${JOY.y.toFixed(2)}<br>FPS ${dispFPS} | DC:${dc}<br>KINGDOM ${kd?kd.name:'?'}<br>BIOME ${getBiome(ppos.x,ppos.z).toUpperCase()}<br>TREES T:${trunkIM?trunkIM.count:0} L:${leafIM?leafIM.count:0}<br>CHUNKS ${chunks.size} | SEED ${WORLD_SEED}`;document.getElementById('biome-pill').textContent=getBiome(ppos.x,ppos.z).toUpperCase()+' · '+getKingdom(ppos.x,ppos.z).toUpperCase();updateHUDBars();updateRepHUD();}
+
+// ════════════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════════════
+const sleep2=ms=>new Promise(r=>setTimeout(r,ms));
+function setLoad(p,m){document.getElementById('lp').style.width=p+'%';document.getElementById('ls').textContent=m;}
+let ready=false;
+async function init(){
+  setLoad(5,'Skybox…');scene.fog=new THREE.FogExp2(0x9ec8de,0.007);buildSky();await sleep2(20);
+  setLoad(14,'Lights…');setupLights();await sleep2(15);
+  setLoad(22,'Water…');buildWater();await sleep2(15);
+  setLoad(30,'Trees…');initTrees();await sleep2(15);
+  setLoad(42,'Kingdoms…');
+  // Show kingdom info
+  Object.values(KINGDOMS).forEach(k=>{document.getElementById('ls').textContent=`Placing ${k.name}…`;});
+  await sleep2(20);
+  setLoad(52,'Spawn…');const spH=terrainH(0,0);ppos.set(0,spH+PLAYER_H+3,0);await sleep2(10);
+  setLoad(58,'Terrain…');
+  for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){const cx=dx+Math.floor(ppos.x/CSIZ),cz=dz+Math.floor(ppos.z/CSIZ),k=ck(cx,cz);if(!chunks.has(k)){const segs=(Math.abs(dx)<=1&&Math.abs(dz)<=1)?SEG_N:SEG_M;const mesh=buildChunk(cx,cz,segs);scene.add(mesh);chunks.set(k,{mesh,cx,cz});spawnDecor(cx,cz);}setLoad(58+Math.round(((dz+2)*5+(dx+2))/25*35),'Building world…');await sleep2(6);}
+  // Starting quests
+  activeQuests.push(QUEST_POOL[0]);QUEST_POOL[0].accepted=true;
+  activeQuests.push(QUEST_POOL[4]);QUEST_POOL[4].accepted=true;
+  document.getElementById('k-nm').textContent='Wanderer · No Kingdom';
+  setLoad(97,'Ready…');await sleep2(80);setLoad(100,'Welcome!');await sleep2(400);
+  const ld=document.getElementById('load');ld.style.transition='opacity 0.6s';ld.style.opacity='0';
+  setTimeout(()=>{ld.style.display='none';addToast('⚔️ Welcome to Kingdoms of the Four Gods');},620);
+  ready=true;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  MAIN LOOP
+// ════════════════════════════════════════════════════════════════════
+let lastT=0,frame=0;
+function loop(now){
+  requestAnimationFrame(loop);if(!ready)return;
+  const dt=Math.min((now-lastT)/1000,0.05);lastT=now;frame++;
+  updatePlayer(dt);
+  if(frame%3===0)updateChunks();
+  if(frame%2===0)processQueue();
+  if(frame%4===0)cullChunks();
+  const dayT=updateSky(dt);
+  if(waterU)waterU.uT.value=now*0.001;
+  updateTrees(now*0.001,dayT);
+  // Gameplay ticks (lower freq)
+  if(frame%60===0){tickSurvival(1);tickWeather(1);tickNPCEncounters(1);}
+  if(frame%300===0)tickWar(5);
+  if(frame%6===0)updateDebug(dt);
+  renderer.render(scene,camera);
+}
+init().then(()=>{lastT=performance.now();requestAnimationFrame(loop);});
+</script>
+</body>
+</html>
