@@ -10,86 +10,120 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,sans-serif;touch-action:none;}
 canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;}
-#rot{position:fixed;inset:0;background:#000;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:16px;}
+#rot{position:fixed;inset:0;background:#060a12;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:16px;}
 #rot svg{width:56px;height:56px;animation:rp 1.4s ease-in-out infinite;}
 @keyframes rp{0%,100%{transform:rotate(-10deg);}50%{transform:rotate(80deg);}}
 #rot p{font-size:13px;color:rgba(255,255,255,0.5);letter-spacing:2px;}
 @media(orientation:portrait){#rot{display:flex;}}
-/* ── LOADING ── */
 #load{position:fixed;inset:0;background:#060a12;z-index:5000;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 #load h1{font-size:clamp(18px,4vw,30px);font-weight:200;letter-spacing:6px;color:#4dd9ff;margin-bottom:4px;}
 #load .sub{font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:3px;margin-bottom:44px;}
 #lpw{width:240px;height:2px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;}
 #lp{height:100%;background:linear-gradient(90deg,#4dd9ff,#a855f7);width:0%;transition:width 0.3s;}
 #ls{margin-top:10px;font-size:9px;color:rgba(255,255,255,0.22);letter-spacing:2px;height:14px;}
-/* ── BASE HUD ── */
+/* TUTORIAL */
+#tutorial{position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:3000;display:none;align-items:flex-end;justify-content:center;pointer-events:all;padding-bottom:24px;}
+#tut-box{width:min(560px,92vw);background:linear-gradient(135deg,rgba(6,10,22,0.99),rgba(10,18,35,0.99));border:1px solid rgba(77,217,255,0.32);border-radius:16px;overflow:hidden;box-shadow:0 0 60px rgba(77,217,255,0.12);}
+#tut-header{padding:10px 16px;background:rgba(77,217,255,0.07);border-bottom:1px solid rgba(77,217,255,0.15);display:flex;align-items:center;gap:10px;}
+#tut-speaker-icon{font-size:22px;}
+#tut-speaker-name{font-size:11px;font-weight:700;color:#4dd9ff;letter-spacing:2px;text-transform:uppercase;}
+#tut-speaker-role{font-size:9px;color:rgba(255,255,255,0.32);letter-spacing:1px;margin-left:auto;}
+#tut-content{padding:16px 16px 10px;}
+#tut-text{font-size:14px;color:rgba(255,255,255,0.92);line-height:1.7;min-height:52px;}
+#tut-choices{padding:6px 12px 12px;display:flex;flex-direction:column;gap:6px;}
+.tut-choice{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 14px;font-size:12px;color:rgba(255,255,255,0.78);cursor:pointer;transition:all 0.15s;text-align:left;}
+.tut-choice:active{background:rgba(77,217,255,0.14);border-color:rgba(77,217,255,0.5);color:#fff;}
+.tut-choice.primary{background:rgba(77,217,255,0.1);border-color:rgba(77,217,255,0.38);color:#4dd9ff;}
+#tut-progress{padding:4px 16px 12px;display:flex;align-items:center;gap:5px;}
+.tut-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.15);transition:all 0.3s;}
+.tut-dot.active{background:#4dd9ff;width:14px;border-radius:3px;}
+/* HUD */
 #ui{position:fixed;inset:0;pointer-events:none;z-index:100;}
-/* top-left: kingdom + god */
 #tl{position:absolute;top:8px;left:10px;display:flex;flex-direction:column;gap:4px;}
-#kbox{background:rgba(0,0,0,0.62);border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:5px 10px;min-width:110px;}
+#kbox{background:rgba(0,0,0,0.62);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;min-width:120px;backdrop-filter:blur(4px);}
 .lbl2{font-size:7px;color:rgba(255,255,255,0.28);letter-spacing:1px;text-transform:uppercase;}
-#k-nm{font-size:11px;font-weight:600;color:#4dd9ff;}
-#g-nm{font-size:9px;color:rgba(255,255,255,0.45);margin-top:1px;}
-#tod{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.07);border-radius:5px;padding:3px 8px;font-size:8px;color:rgba(255,255,255,0.38);font-family:monospace;letter-spacing:1px;}
-/* top-center bars */
-#tc{position:absolute;top:6px;left:50%;transform:translateX(-50%);display:flex;gap:8px;}
+#p-name{font-size:12px;font-weight:700;color:#fff;}
+#k-nm{font-size:9px;color:#4dd9ff;margin-top:1px;}
+#g-nm{font-size:8px;color:rgba(255,255,255,0.42);margin-top:1px;}
+/* GOLD HUD */
+#gold-hud{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;}
+.coin-badge{display:flex;align-items:center;gap:2px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 5px;font-size:8px;}
+.coin-badge.gold{border-color:rgba(243,156,18,0.4);color:#f39c12;}
+.coin-badge.silver{border-color:rgba(200,200,200,0.3);color:#ccc;}
+.coin-badge.emerald{border-color:rgba(46,213,115,0.4);color:#2ed573;}
+#tod{background:rgba(0,0,0,0.42);border:1px solid rgba(255,255,255,0.07);border-radius:5px;padding:3px 8px;font-size:8px;color:rgba(255,255,255,0.40);font-family:monospace;letter-spacing:1px;}
+#tc{position:absolute;top:6px;left:50%;transform:translateX(-50%);display:flex;gap:7px;}
 .bw{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.bl{font-size:6px;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;}
-.bar{width:72px;height:5px;background:rgba(0,0,0,0.55);border-radius:3px;border:1px solid rgba(255,255,255,0.08);overflow:hidden;}
+.bl{font-size:5.5px;color:rgba(255,255,255,0.30);letter-spacing:1px;text-transform:uppercase;}
+.bar{width:62px;height:5px;background:rgba(0,0,0,0.55);border-radius:3px;border:1px solid rgba(255,255,255,0.07);overflow:hidden;}
 .bf{height:100%;border-radius:3px;transition:width 0.25s;}
 #hpb{background:linear-gradient(90deg,#e74c3c,#c0392b);width:100%;}
 #stb{background:linear-gradient(90deg,#f39c12,#e67e22);width:100%;}
 #hgb{background:linear-gradient(90deg,#e67e22,#d35400);width:80%;}
 #thb{background:linear-gradient(90deg,#3498db,#2980b9);width:100%;}
 #xpb{background:linear-gradient(90deg,#a855f7,#7c3aed);width:35%;}
-/* top-right debug */
-#dbg{position:absolute;top:6px;right:10px;background:rgba(0,0,0,0.6);border:1px solid rgba(77,217,255,0.18);border-radius:6px;padding:5px 9px;font-size:7px;color:rgba(77,217,255,0.65);font-family:monospace;line-height:1.9;min-width:160px;text-align:left;}
-/* crosshair */
-#xh{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;pointer-events:none;}
-#xh::before,#xh::after{content:'';position:absolute;background:rgba(255,255,255,0.55);}
-#xh::before{width:1px;height:14px;left:7px;top:0;}
-#xh::after{width:14px;height:1px;left:0;top:7px;}
-/* bottom-center pill row */
+/* TOP RIGHT */
+#tr{position:absolute;top:8px;right:10px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+#tr-row{display:flex;gap:6px;align-items:flex-start;}
+#minimap{width:110px;height:110px;border-radius:50%;border:2px solid rgba(77,217,255,0.35);background:rgba(0,0,0,0.72);overflow:hidden;position:relative;box-shadow:0 0 20px rgba(0,0,0,0.6);}
+#mm-canvas{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;}
+.mm-compass{position:absolute;font-size:7px;color:rgba(255,255,255,0.50);pointer-events:none;font-family:monospace;}
+#mm-n{top:2px;left:50%;transform:translateX(-50%);color:#4dd9ff;font-weight:700;}
+#mm-s{bottom:2px;left:50%;transform:translateX(-50%);}
+#mm-w{left:3px;top:50%;transform:translateY(-50%);}
+#mm-e{right:3px;top:50%;transform:translateY(-50%);}
+#menu-btn{width:36px;height:36px;background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:rgba(255,255,255,0.82);font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:all;backdrop-filter:blur(4px);transition:all 0.15s;}
+#menu-btn:active{background:rgba(77,217,255,0.18);border-color:#4dd9ff;}
+#quest-tracker{position:absolute;top:128px;right:10px;max-width:148px;pointer-events:all;}
+#qt-label{font-size:7px;color:rgba(255,255,255,0.26);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+#qt-objective{background:rgba(0,0,0,0.56);border:1px solid rgba(77,217,255,0.22);border-radius:6px;padding:5px 8px;font-size:9px;color:rgba(255,255,255,0.75);line-height:1.4;cursor:pointer;}
+#qt-objective:active{border-color:rgba(77,217,255,0.5);}
+/* NOTIFICATIONS */
+#notif-stack{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:600;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;}
+.notif{background:rgba(0,0,0,0.84);border:1px solid rgba(77,217,255,0.30);border-radius:8px;padding:7px 16px;color:#fff;font-size:11px;white-space:nowrap;text-align:center;animation:notifIn 0.3s ease;max-width:88vw;}
+@keyframes notifIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+.notif.discovery{border-color:rgba(243,156,18,0.5);color:#f5c842;}
+.notif.levelup{border-color:rgba(168,85,247,0.5);color:#c084fc;}
+#ipr{position:absolute;bottom:32%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.80);border:1px solid rgba(255,255,255,0.2);border-radius:5px;padding:5px 14px;color:#fff;font-size:11px;display:none;white-space:nowrap;pointer-events:all;cursor:pointer;}
+#ipr:active{background:rgba(77,217,255,0.2);}
 #bot{position:absolute;bottom:58px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;}
-#biome-pill{background:rgba(0,0,0,0.48);border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:2px 10px;font-size:8px;color:rgba(255,255,255,0.38);letter-spacing:1px;text-transform:uppercase;}
-#rep-pill{background:rgba(0,0,0,0.48);border:1px solid rgba(255,255,255,0.12);border-radius:5px;padding:2px 10px;font-size:8px;color:#f39c12;letter-spacing:0.8px;}
-#weather-pill{background:rgba(0,0,0,0.42);border:1px solid rgba(255,255,255,0.07);border-radius:5px;padding:2px 10px;font-size:8px;color:rgba(255,255,255,0.3);letter-spacing:0.8px;}
-#kb{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.15);font-size:7px;letter-spacing:0.5px;white-space:nowrap;pointer-events:none;}
-/* ── NOTIFICATION TOAST ── */
-#toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.82);border:1px solid rgba(77,217,255,0.3);border-radius:8px;padding:8px 18px;color:#fff;font-size:12px;z-index:800;display:none;white-space:nowrap;text-align:center;max-width:90vw;}
-/* ── INTERACT PROMPT ── */
-#ipr{position:absolute;bottom:30%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.2);border-radius:5px;padding:5px 14px;color:#fff;font-size:11px;display:none;white-space:nowrap;}
-/* ── JOYSTICK ── */
-#joy{position:fixed;bottom:22px;left:22px;z-index:300;touch-action:none;}
-#jbase{width:110px;height:110px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.16);border-radius:50%;position:relative;touch-action:none;}
-#jknob{width:46px;height:46px;background:rgba(77,217,255,0.22);border:2px solid rgba(77,217,255,0.55);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;box-shadow:0 0 12px rgba(77,217,255,0.18);}
-/* ── RIGHT BUTTONS ── */
+#biome-pill{background:rgba(0,0,0,0.46);border:1px solid rgba(255,255,255,0.08);border-radius:5px;padding:2px 10px;font-size:8px;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;}
+#rep-pill{background:rgba(0,0,0,0.46);border:1px solid rgba(255,255,255,0.10);border-radius:5px;padding:2px 10px;font-size:8px;color:#f39c12;letter-spacing:0.8px;}
+#weather-pill{background:rgba(0,0,0,0.40);border:1px solid rgba(255,255,255,0.06);border-radius:5px;padding:2px 10px;font-size:8px;color:rgba(255,255,255,0.28);letter-spacing:0.8px;}
+#kb{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.12);font-size:7px;letter-spacing:0.5px;white-space:nowrap;pointer-events:none;}
+/* DPAD — replaces joystick */
+#dpad{position:fixed;bottom:18px;left:18px;z-index:300;width:130px;height:130px;touch-action:none;}
+#dpad-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+#dpad-plus{font-size:20px;color:rgba(255,255,255,0.6);line-height:1;pointer-events:none;}
+.dpad-btn{position:absolute;width:40px;height:40px;background:rgba(0,0,0,0.50);border:1px solid rgba(255,255,255,0.18);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:rgba(255,255,255,0.6);touch-action:manipulation;}
+.dpad-btn:active,.dpad-btn.held{background:rgba(77,217,255,0.2);border-color:rgba(77,217,255,0.5);}
+#dpad-up{top:0;left:50%;transform:translateX(-50%);}
+#dpad-down{bottom:0;left:50%;transform:translateX(-50%);}
+#dpad-left{left:0;top:50%;transform:translateY(-50%);}
+#dpad-right{right:0;top:50%;transform:translateY(-50%);}
+/* RIGHT BUTTONS */
 #rbtns{position:fixed;bottom:14px;right:14px;z-index:300;display:flex;flex-direction:column;gap:8px;align-items:flex-end;touch-action:manipulation;}
 .rr2{display:flex;gap:8px;}
-.ab{width:52px;height:52px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.5);color:#fff;font-size:9px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
+.ab{width:60px;height:60px;border-radius:50%;border:2px solid rgba(255,255,255,0.22);background:rgba(0,0,0,0.52);color:#fff;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:manipulation;}
 .ab:active{background:rgba(255,255,255,0.18);}
 #bj{background:rgba(52,152,219,0.22);border-color:#3498db;color:#7ec8f0;}
 #brun{background:rgba(243,156,18,0.22);border-color:#f39c12;color:#f5c842;}
-#binv{background:rgba(168,85,247,0.22);border-color:#a855f7;width:46px;height:46px;color:#c084fc;}
-#bqst{background:rgba(77,217,255,0.22);border-color:#4dd9ff;width:46px;height:46px;color:#4dd9ff;font-size:8px;}
-#bcmp{background:rgba(46,204,113,0.22);border-color:#2ecc71;width:46px;height:46px;color:#2ecc71;font-size:8px;}
-#bgod{background:rgba(243,156,18,0.22);border-color:#f39c12;width:46px;height:46px;color:#f39c12;font-size:8px;}
 #ch{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);font-size:7px;color:rgba(255,255,255,0.12);letter-spacing:1px;pointer-events:none;z-index:150;}
-
-/* ══════════ MODAL BASE ══════════ */
+#warbanner{position:fixed;top:55px;left:50%;transform:translateX(-50%);background:rgba(180,20,20,0.90);border:1px solid #e74c3c;border-radius:7px;padding:5px 18px;font-size:11px;font-weight:600;color:#fff;letter-spacing:1px;z-index:400;display:none;}
+/* MODAL BASE */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:500;display:none;align-items:center;justify-content:center;pointer-events:all;}
-.mbox{width:min(680px,95vw);max-height:90vh;background:rgba(6,10,20,0.99);border:1px solid rgba(77,217,255,0.22);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;}
+.mbox{width:min(680px,95vw);max-height:86vh;background:rgba(6,10,20,0.99);border:1px solid rgba(77,217,255,0.22);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;}
 .mbox.sm{width:min(480px,92vw);}
-.mbox.lg{width:min(780px,97vw);}
+#inv-modal .mbox{max-height:70vh;margin-top:auto;border-radius:14px 14px 0 0;}
+#inv-modal{align-items:flex-end;}
 .mhdr{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
 .mhdr h2{color:#4dd9ff;font-size:13px;font-weight:600;letter-spacing:2px;}
-.xbtn{background:none;border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.55);width:28px;height:28px;border-radius:5px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
-.mtabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;}
-.mtab{padding:8px 12px;font-size:10px;color:rgba(255,255,255,0.32);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:0.5px;}
+.xbtn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.18);color:rgba(255,255,255,0.7);width:30px;height:30px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.xbtn:active{background:rgba(231,76,60,0.3);border-color:#e74c3c;color:#fff;}
+.mtabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;overflow-x:auto;}
+.mtab{padding:8px 12px;font-size:10px;color:rgba(255,255,255,0.32);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:0.5px;white-space:nowrap;}
 .mtab.on{color:#4dd9ff;border-bottom-color:#4dd9ff;}
 .mscroll{overflow-y:auto;flex:1;padding:12px;}
-
-/* ── INVENTORY ── */
 #inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px;}
 .isl{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:6px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px;cursor:pointer;position:relative;transition:all 0.12s;}
 .isl:active{background:rgba(77,217,255,0.08);}
@@ -97,169 +131,181 @@ canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;}
 .ico{font-size:19px;line-height:1;}.nm{font-size:7px;color:rgba(255,255,255,0.42);text-align:center;margin-top:3px;line-height:1.2;}
 .qty{position:absolute;bottom:3px;right:4px;font-size:7px;color:rgba(255,255,255,0.32);}
 .rc{border-color:rgba(255,255,255,0.11);}.ri{border-color:rgba(52,152,219,0.4);}.re{border-color:rgba(155,89,182,0.5);}.rl{border-color:rgba(243,156,18,0.62);}
-
-/* ── QUEST LOG ── */
 .qcard{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:11px;margin-bottom:8px;cursor:pointer;transition:all 0.12s;}
-.qcard:active,.qcard:hover{background:rgba(77,217,255,0.06);border-color:rgba(77,217,255,0.25);}
+.qcard:active{background:rgba(77,217,255,0.06);border-color:rgba(77,217,255,0.25);}
 .qcard.done{opacity:0.5;}
 .qtitle{font-size:12px;font-weight:600;color:#fff;margin-bottom:3px;}
 .qdesc{font-size:9px;color:rgba(255,255,255,0.4);line-height:1.6;}
 .qtag{display:inline-block;font-size:8px;padding:2px 6px;border-radius:3px;margin-right:4px;margin-top:4px;}
-.qt-main{background:rgba(243,156,18,0.2);color:#f39c12;}
-.qt-king{background:rgba(52,152,219,0.2);color:#3498db;}
-.qt-vill{background:rgba(46,204,113,0.2);color:#2ecc71;}
-.qt-god{background:rgba(155,89,182,0.2);color:#a855f7;}
-.qt-boun{background:rgba(231,76,60,0.2);color:#e74c3c;}
-.qt-expl{background:rgba(77,217,255,0.2);color:#4dd9ff;}
+.qt-main{background:rgba(243,156,18,0.2);color:#f39c12;}.qt-king{background:rgba(52,152,219,0.2);color:#3498db;}.qt-vill{background:rgba(46,204,113,0.2);color:#2ecc71;}.qt-god{background:rgba(155,89,182,0.2);color:#a855f7;}.qt-boun{background:rgba(231,76,60,0.2);color:#e74c3c;}.qt-expl{background:rgba(77,217,255,0.2);color:#4dd9ff;}
 .qrew{font-size:8px;color:#f39c12;margin-top:4px;}
-
-/* ── NPC DIALOGUE ── */
-#dlg-box{position:fixed;bottom:150px;left:50%;transform:translateX(-50%);width:min(600px,90vw);background:rgba(5,9,18,0.96);border:1px solid rgba(77,217,255,0.25);border-radius:12px;padding:0;z-index:450;display:none;pointer-events:all;}
-#dlg-npc{padding:10px 14px 0;font-size:10px;font-weight:600;color:#4dd9ff;letter-spacing:1px;}
-#dlg-text{padding:8px 14px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.6;min-height:44px;}
-#dlg-choices{padding:6px 10px 10px;display:flex;flex-direction:column;gap:5px;}
+/* NPC DIALOGUE */
+#dlg-box{position:fixed;bottom:175px;left:50%;transform:translateX(-50%);width:min(600px,90vw);background:rgba(5,9,18,0.97);border:1px solid rgba(77,217,255,0.28);border-radius:12px;z-index:450;display:none;pointer-events:all;box-shadow:0 0 30px rgba(0,0,0,0.6);}
+#dlg-header{padding:8px 12px;background:rgba(77,217,255,0.06);border-bottom:1px solid rgba(77,217,255,0.15);display:flex;align-items:center;gap:8px;}
+#dlg-npc-ico{font-size:22px;}
+#dlg-npc{font-size:10px;font-weight:700;color:#4dd9ff;letter-spacing:1px;flex:1;}
+#dlg-close{width:26px;height:26px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:5px;color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#dlg-close:active{background:rgba(231,76,60,0.3);color:#fff;}
+#dlg-text{padding:10px 14px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.65;min-height:44px;}
+#dlg-choices{padding:4px 10px 10px;display:flex;flex-direction:column;gap:5px;}
 .dchoice{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 12px;font-size:11px;color:rgba(255,255,255,0.75);cursor:pointer;transition:all 0.12s;text-align:left;}
-.dchoice:active,.dchoice:hover{background:rgba(77,217,255,0.1);border-color:rgba(77,217,255,0.3);color:#fff;}
-
-/* ── GOD SELECTION ── */
+.dchoice:active{background:rgba(77,217,255,0.1);border-color:rgba(77,217,255,0.3);color:#fff;}
+/* SHOP MODAL */
+#shop-modal .mbox{width:min(540px,94vw);}
+.shop-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:7px;margin-bottom:6px;}
+.shop-ico{font-size:22px;width:30px;text-align:center;}
+.shop-inf{flex:1;}
+.shop-nm{font-size:11px;font-weight:600;color:#fff;margin-bottom:2px;}
+.shop-pr{font-size:9px;color:#f39c12;}
+.buy-btn{background:rgba(243,156,18,0.15);border:1px solid rgba(243,156,18,0.4);color:#f39c12;font-size:9px;padding:5px 10px;border-radius:5px;cursor:pointer;white-space:nowrap;}
+.buy-btn:active{background:rgba(243,156,18,0.3);}
+.buy-btn:disabled{opacity:0.35;cursor:default;}
+/* GOD CARD */
 .gcard{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:13px;margin-bottom:9px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:13px;}
-.gcard:active,.gcard:hover{background:rgba(77,217,255,0.06);}
+.gcard:active{background:rgba(77,217,255,0.06);}
 .gcard.chosen{border-color:#f39c12;background:rgba(243,156,18,0.08);}
-.gico{font-size:30px;flex-shrink:0;}
-.ginf{flex:1;}
-.gname{font-size:13px;font-weight:600;color:#fff;margin-bottom:2px;}
-.gdesc{font-size:9px;color:rgba(255,255,255,0.4);line-height:1.5;}
-.gpow{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
-.gpill{font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.45);}
-
-/* ── KINGDOM PANEL ── */
+.gico{font-size:30px;flex-shrink:0;}.ginf{flex:1;}.gname{font-size:13px;font-weight:600;color:#fff;margin-bottom:2px;}.gdesc{font-size:9px;color:rgba(255,255,255,0.4);line-height:1.5;}
+.gpow{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}.gpill{font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.45);}
 .kcard{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:12px;margin-bottom:8px;}
-.kname{font-size:13px;font-weight:600;margin-bottom:3px;}
-.kstat{font-size:9px;color:rgba(255,255,255,0.4);line-height:1.8;}
-.repbar{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-top:4px;}
-.repfill{height:100%;border-radius:3px;transition:width 0.4s;}
-
-/* ── CRAFT ── */
+.kname{font-size:13px;font-weight:600;margin-bottom:3px;}.kstat{font-size:9px;color:rgba(255,255,255,0.4);line-height:1.8;}
+.repbar{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-top:4px;}.repfill{height:100%;border-radius:3px;transition:width 0.4s;}
 .craft-row{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:9px 12px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:all 0.12s;}
 .craft-row:active{background:rgba(77,217,255,0.07);}
-.craft-ico{font-size:22px;width:30px;text-align:center;}
-.craft-inf{flex:1;}
-.craft-nm{font-size:11px;font-weight:600;color:#fff;margin-bottom:2px;}
-.craft-req{font-size:8px;color:rgba(255,255,255,0.38);line-height:1.5;}
-.craft-btn{background:rgba(77,217,255,0.15);border:1px solid rgba(77,217,255,0.3);color:#4dd9ff;font-size:9px;padding:4px 10px;border-radius:5px;cursor:pointer;}
-
-/* ── CAMP ── */
+.craft-ico{font-size:22px;width:30px;text-align:center;}.craft-inf{flex:1;}.craft-nm{font-size:11px;font-weight:600;color:#fff;margin-bottom:2px;}.craft-req{font-size:8px;color:rgba(255,255,255,0.38);line-height:1.5;}
+.craft-btn{background:rgba(77,217,255,0.15);border:1px solid rgba(77,217,255,0.3);color:#4dd9ff;font-size:9px;padding:4px 10px;border-radius:5px;cursor:pointer;white-space:nowrap;}
 .camp-row{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.12s;}
 .camp-row:active{background:rgba(46,204,113,0.07);}
-
-/* ── SURVIVAL BARS (extra) ── */
-#surv{position:absolute;bottom:86px;right:14px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;}
-.sbar-row{display:flex;align-items:center;gap:5px;}
-.sbar-lbl{font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:0.5px;text-transform:uppercase;width:32px;text-align:right;}
-.sbar{width:62px;height:4px;background:rgba(0,0,0,0.5);border-radius:2px;border:1px solid rgba(255,255,255,0.07);overflow:hidden;}
-.sbf{height:100%;border-radius:2px;transition:width 0.3s;}
-#hgbf{background:linear-gradient(90deg,#e67e22,#d35400);}
-#thbf{background:linear-gradient(90deg,#3498db,#2471a3);}
-#slpbf{background:linear-gradient(90deg,#a855f7,#7c3aed);}
-/* ── WAR BANNER ── */
-#warbanner{position:fixed;top:55px;left:50%;transform:translateX(-50%);background:rgba(180,20,20,0.88);border:1px solid #e74c3c;border-radius:7px;padding:5px 18px;font-size:11px;font-weight:600;color:#fff;letter-spacing:1px;z-index:400;display:none;}
-/* ── QUICK SLOTS ── */
-#qslots{position:fixed;bottom:148px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:200;pointer-events:none;}
-.qslot{width:44px;height:44px;background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.14);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px;color:rgba(255,255,255,0.6);position:relative;}
-.qslot .qn{position:absolute;bottom:2px;right:4px;font-size:7px;color:rgba(255,255,255,0.3);}
+/* SIDE MENU */
+#side-menu{position:fixed;top:0;right:0;width:220px;height:100%;background:rgba(4,8,18,0.97);border-left:1px solid rgba(77,217,255,0.18);z-index:600;transform:translateX(100%);transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);pointer-events:all;display:flex;flex-direction:column;}
+#side-menu.open{transform:translateX(0);}
+#smh{padding:16px 16px 10px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;align-items:center;}
+#smh h3{font-size:10px;color:rgba(255,255,255,0.28);letter-spacing:3px;text-transform:uppercase;}
+#smc{width:28px;height:28px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:rgba(255,255,255,0.5);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+#smb{flex:1;overflow-y:auto;padding:8px 0;}
+.mi{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;transition:background 0.12s;border-left:3px solid transparent;}
+.mi:active{background:rgba(77,217,255,0.08);border-left-color:rgba(77,217,255,0.4);}
+.mi-ic{font-size:18px;width:24px;text-align:center;}.mi-lb{font-size:12px;color:rgba(255,255,255,0.75);}
+.msep{height:1px;background:rgba(255,255,255,0.06);margin:6px 14px;}
+#mbk{position:fixed;inset:0;z-index:590;display:none;}
+#mbk.show{display:block;}
+/* WORLD MAP — fixed close button */
+#wmo{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:550;display:none;align-items:center;justify-content:center;pointer-events:all;}
+#wmb{width:min(660px,94vw);background:rgba(5,10,22,0.99);border:1px solid rgba(77,217,255,0.25);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;max-height:90vh;}
+#wmh{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+#wmh h2{font-size:13px;font-weight:600;color:#4dd9ff;letter-spacing:2px;}
+#wmc-wrap{padding:12px;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#wmc{max-width:100%;max-height:100%;border-radius:8px;border:1px solid rgba(77,217,255,0.12);display:block;}
 </style>
 </head>
 <body>
-<div id="rot">
-  <svg viewBox="0 0 56 56" fill="none" stroke="#4dd9ff" stroke-width="1.5">
-    <rect x="16" y="6" width="22" height="34" rx="3"/>
-    <path d="M36 46 l10-10 M36 46 l-10-10" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-  <p>ROTATE TO LANDSCAPE</p>
-</div>
-<div id="load">
-  <h1>KINGDOMS OF THE FOUR GODS</h1>
-  <div class="sub">PROCEDURAL RPG · SEED 987654</div>
-  <div id="lpw"><div id="lp"></div></div>
-  <div id="ls">Initializing…</div>
-</div>
+<div id="rot"><svg viewBox="0 0 56 56" fill="none" stroke="#4dd9ff" stroke-width="1.5"><rect x="16" y="6" width="22" height="34" rx="3"/><path d="M36 46 l10-10 M36 46 l-10-10" stroke-linecap="round" stroke-linejoin="round"/></svg><p>ROTATE TO LANDSCAPE</p></div>
+<div id="load"><h1>KINGDOMS OF THE FOUR GODS</h1><div class="sub">PROCEDURAL RPG · SEED 987654</div><div id="lpw"><div id="lp"></div></div><div id="ls">Initializing…</div></div>
 <canvas id="c"></canvas>
-
+<!-- TUTORIAL -->
+<div id="tutorial">
+  <div id="tut-box">
+    <div id="tut-header"><div id="tut-speaker-icon">🧙</div><div id="tut-speaker-name">The Wanderer</div><div id="tut-speaker-role">World Guide</div></div>
+    <div id="tut-content"><div id="tut-text">Welcome, traveler.</div></div>
+    <div id="tut-choices"></div>
+    <div id="tut-progress"></div>
+  </div>
+</div>
 <!-- HUD -->
 <div id="ui">
   <div id="tl">
     <div id="kbox">
-      <div class="lbl2">Kingdom · God</div>
-      <div id="k-nm">Wanderer</div>
+      <div class="lbl2">Player</div>
+      <div id="p-name">Wanderer</div>
+      <div id="k-nm">No Kingdom</div>
       <div id="g-nm">No God chosen</div>
+      <div id="gold-hud">
+        <div class="coin-badge gold">🪙 <span id="hud-gold">0</span>g</div>
+        <div class="coin-badge silver">🥈 <span id="hud-silver">10</span>s</div>
+        <div class="coin-badge emerald">💎 <span id="hud-emerald">0</span>e</div>
+      </div>
     </div>
     <div id="tod">12:00 · DAY</div>
   </div>
   <div id="tc">
     <div class="bw"><div class="bl">HP</div><div class="bar"><div class="bf" id="hpb"></div></div></div>
     <div class="bw"><div class="bl">STA</div><div class="bar"><div class="bf" id="stb"></div></div></div>
-    <div class="bw"><div class="bl">HUNGER</div><div class="bar"><div class="bf" id="hgb"></div></div></div>
-    <div class="bw"><div class="bl">THIRST</div><div class="bar"><div class="bf" id="thb"></div></div></div>
+    <div class="bw"><div class="bl">HGR</div><div class="bar"><div class="bf" id="hgb"></div></div></div>
+    <div class="bw"><div class="bl">THR</div><div class="bar"><div class="bf" id="thb"></div></div></div>
     <div class="bw"><div class="bl">XP</div><div class="bar"><div class="bf" id="xpb"></div></div></div>
   </div>
-  <div id="dbg">Loading…</div>
-  <div id="xh"></div>
-  <div id="ipr">[ E ] Interact</div>
+  <div id="tr">
+    <div id="tr-row">
+      <div style="position:relative;width:110px;height:110px;">
+        <div id="minimap"><canvas id="mm-canvas" width="110" height="110"></canvas></div>
+        <div class="mm-compass" id="mm-n">N</div><div class="mm-compass" id="mm-s">S</div>
+        <div class="mm-compass" id="mm-w">W</div><div class="mm-compass" id="mm-e">E</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;padding-top:2px;">
+        <div id="menu-btn" onclick="toggleMenu()">☰</div>
+      </div>
+    </div>
+  </div>
+  <div id="quest-tracker">
+    <div id="qt-label">Current Quest</div>
+    <div id="qt-objective" onclick="openModal('quest-modal')">The First Journey</div>
+  </div>
+  <div id="ipr" onclick="tryInteract()">[ Tap ] Talk</div>
   <div id="bot">
     <div id="biome-pill">PLAINS</div>
     <div id="rep-pill">Reputation: Neutral</div>
     <div id="weather-pill">☀️ Clear</div>
   </div>
-  <div id="kb">WASD·MOVE &nbsp;|&nbsp; SPACE·JUMP &nbsp;|&nbsp; SHIFT·SPRINT &nbsp;|&nbsp; E·INTERACT &nbsp;|&nbsp; I·INV &nbsp;|&nbsp; Q·QUESTS &nbsp;|&nbsp; G·GOD &nbsp;|&nbsp; K·KINGDOMS &nbsp;|&nbsp; F·CRAFT</div>
-  <!-- Survival bars (bottom-right) -->
-  <div id="surv">
-    <div class="sbar-row"><div class="sbar-lbl">HUNGER</div><div class="sbar"><div class="sbf" id="hgbf" style="width:80%"></div></div></div>
-    <div class="sbar-row"><div class="sbar-lbl">THIRST</div><div class="sbar"><div class="sbf" id="thbf" style="width:100%"></div></div></div>
-    <div class="sbar-row"><div class="sbar-lbl">SLEEP</div><div class="sbar"><div class="sbf" id="slpbf" style="width:90%"></div></div></div>
-  </div>
+  <div id="kb">WASD·MOVE | SPACE·JUMP | SHIFT·SPRINT | E·INTERACT | I·INV | Q·QUESTS | M·MAP</div>
 </div>
-
-<!-- War Banner -->
-<div id="warbanner">⚔️ WAR DECLARED — Kingdoms at conflict!</div>
-
-<!-- Quick Slots -->
-<div id="qslots">
-  <div class="qslot">⚔️<div class="qn">1</div></div>
-  <div class="qslot">🧪<div class="qn">2</div></div>
-  <div class="qslot">🍖<div class="qn">3</div></div>
-  <div class="qslot">🪵<div class="qn">4</div></div>
+<div id="notif-stack"></div>
+<div id="warbanner">⚔️ WAR DECLARED!</div>
+<!-- DPAD -->
+<div id="dpad">
+  <div id="dpad-center"><div id="dpad-plus">✛</div></div>
+  <div class="dpad-btn" id="dpad-up" onpointerdown="dpadPress('up')" onpointerup="dpadRelease('up')" onpointerleave="dpadRelease('up')">▲</div>
+  <div class="dpad-btn" id="dpad-down" onpointerdown="dpadPress('down')" onpointerup="dpadRelease('down')" onpointerleave="dpadRelease('down')">▼</div>
+  <div class="dpad-btn" id="dpad-left" onpointerdown="dpadPress('left')" onpointerup="dpadRelease('left')" onpointerleave="dpadRelease('left')">◀</div>
+  <div class="dpad-btn" id="dpad-right" onpointerdown="dpadPress('right')" onpointerup="dpadRelease('right')" onpointerleave="dpadRelease('right')">▶</div>
 </div>
-
-<!-- Notification -->
-<div id="toast"></div>
-
-<!-- NPC Dialogue -->
-<div id="dlg-box">
-  <div id="dlg-npc">Villager</div>
-  <div id="dlg-text">Hello, traveler…</div>
-  <div id="dlg-choices"></div>
-</div>
-
-<!-- Joystick -->
-<div id="joy"><div id="jbase"><div id="jknob"></div></div></div>
-
-<!-- Right Buttons -->
+<!-- Run + Jump -->
 <div id="rbtns">
-  <div class="rr2">
-    <button class="ab" id="binv" onpointerdown="openModal('inv-modal')">INV</button>
-    <button class="ab" id="bqst" onpointerdown="openModal('quest-modal')">QUESTS</button>
-    <button class="ab" id="bgod" onpointerdown="openModal('god-modal')">GOD</button>
-    <button class="ab" id="bcmp" onpointerdown="openModal('camp-modal')">CAMP</button>
-  </div>
   <div class="rr2">
     <button class="ab" id="brun" onpointerdown="startSprint()" onpointerup="stopSprint()" onpointerleave="stopSprint()">RUN</button>
     <button class="ab" id="bj" onpointerdown="doJump()">JUMP</button>
   </div>
 </div>
 <div id="ch">← DRAG TO LOOK →</div>
-
-<!-- ═══ INVENTORY MODAL ═══ -->
-<div class="modal" id="inv-modal">
+<!-- NPC DIALOGUE -->
+<div id="dlg-box">
+  <div id="dlg-header">
+    <div id="dlg-npc-ico">🧑</div>
+    <div id="dlg-npc">Villager</div>
+    <div id="dlg-close" onclick="closeDlg()">✕</div>
+  </div>
+  <div id="dlg-text">Hello, traveler…</div>
+  <div id="dlg-choices"></div>
+</div>
+<!-- SIDE MENU -->
+<div id="mbk" onclick="closeMenu()"></div>
+<div id="side-menu">
+  <div id="smh"><h3>Menu</h3><div id="smc" onclick="closeMenu()">✕</div></div>
+  <div id="smb">
+    <div class="mi" onclick="closeMenu();openModal('inv-modal')"><div class="mi-ic">🎒</div><div class="mi-lb">Inventory</div></div>
+    <div class="mi" onclick="closeMenu();openModal('quest-modal')"><div class="mi-ic">📜</div><div class="mi-lb">Quests</div></div>
+    <div class="mi" onclick="closeMenu();openModal('kingdom-modal')"><div class="mi-ic">👑</div><div class="mi-lb">Kingdoms</div></div>
+    <div class="mi" onclick="closeMenu();openModal('god-modal')"><div class="mi-ic">⚡</div><div class="mi-lb">God Information</div></div>
+    <div class="mi" onclick="closeMenu();openModal('camp-modal')"><div class="mi-ic">🔥</div><div class="mi-lb">Camp</div></div>
+    <div class="mi" onclick="closeMenu();openModal('craft-modal')"><div class="mi-ic">⚒️</div><div class="mi-lb">Crafting</div></div>
+    <div class="msep"></div>
+    <div class="mi" onclick="closeMenu();openWorldMap()"><div class="mi-ic">🗺️</div><div class="mi-lb">World Map</div></div>
+    <div class="msep"></div>
+    <div class="mi" onclick="closeMenu();saveGame()"><div class="mi-ic">💾</div><div class="mi-lb">Save Game</div></div>
+    <div class="mi" onclick="closeMenu();loadGame()"><div class="mi-ic">📂</div><div class="mi-lb">Load Game</div></div>
+    <div class="mi" onclick="closeMenu()"><div class="mi-ic">⚙️</div><div class="mi-lb">Settings</div></div>
+  </div>
+</div>
+<!-- INVENTORY -->
+<div class="modal" id="inv-modal" onclick="if(event.target===this)closeModal('inv-modal')">
   <div class="mbox">
     <div class="mhdr"><h2>INVENTORY</h2><button class="xbtn" onclick="closeModal('inv-modal')">✕</button></div>
     <div class="mtabs">
@@ -274,9 +320,15 @@ canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;}
     <div class="mscroll"><div id="inv-grid"></div></div>
   </div>
 </div>
-
-<!-- ═══ QUEST LOG MODAL ═══ -->
-<div class="modal" id="quest-modal">
+<!-- SHOP -->
+<div class="modal" id="shop-modal" onclick="if(event.target===this)closeModal('shop-modal')">
+  <div class="mbox sm">
+    <div class="mhdr"><h2 id="shop-title">MERCHANT SHOP</h2><button class="xbtn" onclick="closeModal('shop-modal')">✕</button></div>
+    <div class="mscroll" id="shop-list"></div>
+  </div>
+</div>
+<!-- QUESTS -->
+<div class="modal" id="quest-modal" onclick="if(event.target===this)closeModal('quest-modal')">
   <div class="mbox">
     <div class="mhdr"><h2>QUEST LOG</h2><button class="xbtn" onclick="closeModal('quest-modal')">✕</button></div>
     <div class="mtabs">
@@ -290,19 +342,14 @@ canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;}
     <div class="mscroll" id="quest-list"></div>
   </div>
 </div>
-
-<!-- ═══ GOD SELECTION MODAL ═══ -->
-<div class="modal" id="god-modal">
-  <div class="mbox sm">
-    <div class="mhdr"><h2>DIVINE COVENANT</h2><button class="xbtn" onclick="closeModal('god-modal')">✕</button></div>
-    <div class="mscroll" id="god-list"></div>
-  </div>
+<!-- GODS -->
+<div class="modal" id="god-modal" onclick="if(event.target===this)closeModal('god-modal')">
+  <div class="mbox sm"><div class="mhdr"><h2>DIVINE COVENANT</h2><button class="xbtn" onclick="closeModal('god-modal')">✕</button></div><div class="mscroll" id="god-list"></div></div>
 </div>
-
-<!-- ═══ KINGDOMS MODAL ═══ -->
-<div class="modal" id="kingdom-modal">
+<!-- KINGDOMS -->
+<div class="modal" id="kingdom-modal" onclick="if(event.target===this)closeModal('kingdom-modal')">
   <div class="mbox">
-    <div class="mhdr"><h2>KINGDOMS OF THE WORLD</h2><button class="xbtn" onclick="closeModal('kingdom-modal')">✕</button></div>
+    <div class="mhdr"><h2>KINGDOMS</h2><button class="xbtn" onclick="closeModal('kingdom-modal')">✕</button></div>
     <div class="mtabs">
       <div class="mtab on" onclick="kTab(this,'overview')">Overview</div>
       <div class="mtab" onclick="kTab(this,'relations')">Relations</div>
@@ -311,11 +358,10 @@ canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;}
     <div class="mscroll" id="kingdom-list"></div>
   </div>
 </div>
-
-<!-- ═══ CRAFT MODAL ═══ -->
-<div class="modal" id="craft-modal">
+<!-- CRAFTING -->
+<div class="modal" id="craft-modal" onclick="if(event.target===this)closeModal('craft-modal')">
   <div class="mbox sm">
-    <div class="mhdr"><h2>CRAFTING TABLE</h2><button class="xbtn" onclick="closeModal('craft-modal')">✕</button></div>
+    <div class="mhdr"><h2>CRAFTING</h2><button class="xbtn" onclick="closeModal('craft-modal')">✕</button></div>
     <div class="mtabs">
       <div class="mtab on" onclick="craftTab(this,'tools')">Tools</div>
       <div class="mtab" onclick="craftTab(this,'weapons')">Weapons</div>
@@ -327,43 +373,39 @@ canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;}
     <div class="mscroll" id="craft-list"></div>
   </div>
 </div>
-
-<!-- ═══ CAMP MODAL ═══ -->
-<div class="modal" id="camp-modal">
-  <div class="mbox sm">
-    <div class="mhdr"><h2>CAMP</h2><button class="xbtn" onclick="closeModal('camp-modal')">✕</button></div>
-    <div class="mscroll" id="camp-list"></div>
+<!-- CAMP -->
+<div class="modal" id="camp-modal" onclick="if(event.target===this)closeModal('camp-modal')">
+  <div class="mbox sm"><div class="mhdr"><h2>CAMP</h2><button class="xbtn" onclick="closeModal('camp-modal')">✕</button></div><div class="mscroll" id="camp-list"></div></div>
+</div>
+<!-- WORLD MAP — fixed with proper close button -->
+<div id="wmo" onclick="if(event.target===this)closeWorldMap()">
+  <div id="wmb">
+    <div id="wmh"><h2>WORLD MAP</h2><button class="xbtn" onclick="closeWorldMap()">✕</button></div>
+    <div id="wmc-wrap"><canvas id="wmc"></canvas></div>
   </div>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 'use strict';
-
-// ════════════════════════════════════════════════════════════════════
-//  RENDERER + SCENE  (unchanged from engine)
-// ════════════════════════════════════════════════════════════════════
+// ── FIX: defer renderer creation until after DOM is ready ──
 const isMob=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 const canvas=document.getElementById('c');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:!isMob,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,isMob?1.0:1.5));
+
+// ── RENDERER ──
+const renderer=new THREE.WebGLRenderer({canvas,antialias:!isMob,powerPreference:'high-performance',failIfMajorPerformanceCaveat:false});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,isMob?1.5:2));
 renderer.setSize(window.innerWidth,window.innerHeight);
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.05;
+
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(70,window.innerWidth/window.innerHeight,0.1,600);
 window.addEventListener('resize',()=>{renderer.setSize(window.innerWidth,window.innerHeight);camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();});
 
-// ════════════════════════════════════════════════════════════════════
-//  WORLD SEED
-// ════════════════════════════════════════════════════════════════════
+// ── NOISE ──
 const WORLD_SEED=987654;
-
-// ════════════════════════════════════════════════════════════════════
-//  PERLIN NOISE + FBM  (seeded, deterministic)
-// ════════════════════════════════════════════════════════════════════
 const P=new Uint8Array(512);
 (function(){const src=new Uint8Array(256);for(let i=0;i<256;i++)src[i]=i;let s=WORLD_SEED;const xs=()=>{s^=s<<13;s^=s>>17;s^=s<<5;return(s>>>0)/4294967296;};for(let i=255;i>0;i--){const j=(xs()*(i+1))|0;[src[i],src[j]]=[src[j],src[i]];}for(let i=0;i<512;i++)P[i]=src[i&255];})();
 const _g2=[[1,1],[-1,1],[1,-1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]];
@@ -371,89 +413,27 @@ function _fade(t){return t*t*t*(t*(t*6-15)+10);}
 function _lrp(a,b,t){return a+t*(b-a);}
 function _g(h,x,y){const g=_g2[h&7];return g[0]*x+g[1]*y;}
 const _nc=new Map();const _NCAP=14000;
-function perlin2(x,y){
-  const kx=(x*100)|0,ky=(y*100)|0,k=kx*1000003+ky;
-  if(_nc.has(k))return _nc.get(k);
-  const X=Math.floor(x)&255,Y=Math.floor(y)&255,xf=x-Math.floor(x),yf=y-Math.floor(y);
-  const u=_fade(xf),v=_fade(yf),aa=P[P[X]+Y],ab=P[P[X]+Y+1],ba=P[P[X+1]+Y],bb=P[P[X+1]+Y+1];
-  const r=_lrp(_lrp(_g(aa,xf,yf),_g(ba,xf-1,yf),u),_lrp(_g(ab,xf,yf-1),_g(bb,xf-1,yf-1),u),v);
-  if(_nc.size>=_NCAP)_nc.delete(_nc.keys().next().value);
-  _nc.set(k,r);return r;
-}
+function perlin2(x,y){const kx=(x*100)|0,ky=(y*100)|0,k=kx*1000003+ky;if(_nc.has(k))return _nc.get(k);const X=Math.floor(x)&255,Y=Math.floor(y)&255,xf=x-Math.floor(x),yf=y-Math.floor(y);const u=_fade(xf),v=_fade(yf),aa=P[P[X]+Y],ab=P[P[X]+Y+1],ba=P[P[X+1]+Y],bb=P[P[X+1]+Y+1];const r=_lrp(_lrp(_g(aa,xf,yf),_g(ba,xf-1,yf),u),_lrp(_g(ab,xf,yf-1),_g(bb,xf-1,yf-1),u),v);if(_nc.size>=_NCAP)_nc.delete(_nc.keys().next().value);_nc.set(k,r);return r;}
 function fbm(x,y,oct,pers,lac){let v=0,a=1,f=1,mx=0;for(let i=0;i<oct;i++){v+=perlin2(x*f,y*f)*a;mx+=a;a*=pers;f*=lac;}return v/mx;}
-
-// ── Kingdom noise map (large FBM divides world into 4 kingdoms) ──
-function kingdomNoise(wx,wz){
-  const kx=fbm(wx*0.0004,wz*0.0004,3,0.5,2.0);
-  const kz=fbm(wx*0.0004+50,wz*0.0004+50,3,0.5,2.0);
-  return{kx,kz};
-}
-function getKingdom(wx,wz){
-  const{kx,kz}=kingdomNoise(wx,wz);
-  if(kx>0.05&&kz>0.05)return'sun';
-  if(kx<-0.05&&kz>0.05)return'water';
-  if(kx>0.05&&kz<-0.05)return'forest';
-  return'tech';
-}
-
-function biomeN(wx,wz){return fbm(wx*0.0008,wz*0.0008,3,0.5,2.0);}
-function getBiome(wx,wz){
-  const bn=biomeN(wx,wz),mo=perlin2(wx*0.0006+100,wz*0.0006+100);
-  const k=getKingdom(wx,wz);
-  if(k==='sun')return bn>0.2?'mountain':'desert';
-  if(k==='water')return bn>0.3?'hills':'plains';
-  if(k==='forest')return bn>0.15?'mountain':'forest';
-  return bn>0.35?'mountain':bn>0.12?'hills':'plains';
-}
-
-function terrainH(wx,wz){
-  const biome=getBiome(wx,wz);
-  const macro=fbm(wx*0.003,wz*0.003,2,0.5,2.0)*18;
-  const meso=fbm(wx*0.009,wz*0.009,4,0.52,2.0)*28;
-  const micro=fbm(wx*0.028,wz*0.028,3,0.45,2.0)*6;
-  let h=macro+meso+micro;
-  if(biome==='mountain')h*=1.65;
-  else if(biome==='hills')h*=1.15;
-  else if(biome==='plains')h=h*0.4+2;
-  else if(biome==='desert')h=h*0.5+1.5;
-  else if(biome==='forest')h=h*0.7+3;
-  return Math.max(h,-2);
-}
+function getKingdom(wx,wz){const kx=fbm(wx*0.0004,wz*0.0004,3,0.5,2.0);const kz=fbm(wx*0.0004+50,wz*0.0004+50,3,0.5,2.0);if(kx>0.05&&kz>0.05)return'sun';if(kx<-0.05&&kz>0.05)return'water';if(kx>0.05&&kz<-0.05)return'forest';return'tech';}
+function getBiome(wx,wz){const bn=fbm(wx*0.0008,wz*0.0008,3,0.5,2.0);const k=getKingdom(wx,wz);if(k==='sun')return bn>0.2?'mountain':'desert';if(k==='water')return bn>0.3?'hills':'plains';if(k==='forest')return bn>0.15?'mountain':'forest';return bn>0.35?'mountain':bn>0.12?'hills':'plains';}
+function terrainH(wx,wz){const biome=getBiome(wx,wz);const macro=fbm(wx*0.003,wz*0.003,2,0.5,2.0)*18;const meso=fbm(wx*0.009,wz*0.009,4,0.52,2.0)*28;const micro=fbm(wx*0.028,wz*0.028,3,0.45,2.0)*6;let h=macro+meso+micro;if(biome==='mountain')h*=1.65;else if(biome==='hills')h*=1.15;else if(biome==='plains')h=h*0.4+2;else if(biome==='desert')h=h*0.5+1.5;else if(biome==='forest')h=h*0.7+3;return Math.max(h,-2);}
 function terrainNorm(wx,wz){const d=0.4;const n=new THREE.Vector3(terrainH(wx-d,wz)-terrainH(wx+d,wz),2*d,terrainH(wx,wz-d)-terrainH(wx,wz+d));return n.normalize();}
-function terrainColor(h,biome){
-  if(h<0)return[0.10,0.30,0.55];
-  if(h<1.5)return[0.15,0.40,0.62];
-  if(biome==='desert')return h<3?[0.88,0.78,0.52]:h<8?[0.80,0.68,0.42]:[0.72,0.60,0.38];
-  if(biome==='mountain')return h<12?[0.40,0.38,0.34]:h<25?[0.52,0.50,0.46]:[0.88,0.88,0.90];
-  if(biome==='forest')return h<2.5?[0.72,0.64,0.46]:h<12?[0.16,0.48,0.13]:[0.30,0.42,0.28];
-  return h<2.5?[0.74,0.66,0.46]:h<8?[0.25,0.56,0.20]:h<18?[0.20,0.46,0.16]:h<28?[0.44,0.40,0.35]:[0.86,0.86,0.88];
-}
+function terrainColor(h,biome){if(h<0)return[0.10,0.30,0.55];if(h<1.5)return[0.15,0.40,0.62];if(biome==='desert')return h<3?[0.88,0.78,0.52]:h<8?[0.80,0.68,0.42]:[0.72,0.60,0.38];if(biome==='mountain')return h<12?[0.40,0.38,0.34]:h<25?[0.52,0.50,0.46]:[0.88,0.88,0.90];if(biome==='forest')return h<2.5?[0.72,0.64,0.46]:h<12?[0.16,0.48,0.13]:[0.30,0.42,0.28];return h<2.5?[0.74,0.66,0.46]:h<8?[0.25,0.56,0.20]:h<18?[0.20,0.46,0.16]:h<28?[0.44,0.40,0.35]:[0.86,0.86,0.88];}
 
-// ════════════════════════════════════════════════════════════════════
-//  CHUNK SYSTEM
-// ════════════════════════════════════════════════════════════════════
+// ── CHUNKS ──
 const CSIZ=32,SEG_N=32,SEG_M=16,SEG_F=8,LOAD_R=3,UNLOAD_R=5;
 const chunks=new Map(),cpool=[];
 let cqueue=[],cbusy=false,PCX=0,PCZ=0,lPCX=99999,lPCZ=99999;
 const terrainMat=new THREE.MeshLambertMaterial({vertexColors:true});
 function ck(cx,cz){return cx+'|'+cz;}
 function lodSegs(cx,cz){const d=Math.max(Math.abs(cx-PCX),Math.abs(cz-PCZ));return d<=1?SEG_N:d<=2?SEG_M:SEG_F;}
-function buildChunk(cx,cz,segs){
-  const geo=new THREE.PlaneGeometry(CSIZ,CSIZ,segs,segs);geo.rotateX(-Math.PI/2);
-  const pos=geo.attributes.position,cols=new Float32Array(pos.count*3);
-  const ox=cx*CSIZ,oz=cz*CSIZ;
-  for(let i=0;i<pos.count;i++){const wx=pos.getX(i)+ox,wz=pos.getZ(i)+oz,h=terrainH(wx,wz);pos.setY(i,h);const c=terrainColor(h,getBiome(wx,wz));cols[i*3]=c[0];cols[i*3+1]=c[1];cols[i*3+2]=c[2];}
-  pos.needsUpdate=true;geo.setAttribute('color',new THREE.BufferAttribute(cols,3));geo.computeVertexNormals();
-  let mesh;if(cpool.length>0){mesh=cpool.pop();mesh.geometry.dispose();mesh.geometry=geo;}else{mesh=new THREE.Mesh(geo,terrainMat);mesh.receiveShadow=true;}
-  mesh.position.set(ox,0,oz);mesh.matrixAutoUpdate=false;mesh.updateMatrix();return mesh;
-}
+function buildChunk(cx,cz,segs){const geo=new THREE.PlaneGeometry(CSIZ,CSIZ,segs,segs);geo.rotateX(-Math.PI/2);const pos=geo.attributes.position,cols=new Float32Array(pos.count*3);const ox=cx*CSIZ,oz=cz*CSIZ;for(let i=0;i<pos.count;i++){const wx=pos.getX(i)+ox,wz=pos.getZ(i)+oz,h=terrainH(wx,wz);pos.setY(i,h);const c=terrainColor(h,getBiome(wx,wz));cols[i*3]=c[0];cols[i*3+1]=c[1];cols[i*3+2]=c[2];}pos.needsUpdate=true;geo.setAttribute('color',new THREE.BufferAttribute(cols,3));geo.computeVertexNormals();let mesh;if(cpool.length>0){mesh=cpool.pop();mesh.geometry.dispose();mesh.geometry=geo;}else{mesh=new THREE.Mesh(geo,terrainMat);mesh.receiveShadow=true;}mesh.position.set(cx*CSIZ,0,cz*CSIZ);mesh.matrixAutoUpdate=false;mesh.updateMatrix();return mesh;}
 function scheduleChunk(cx,cz,pri){const k=ck(cx,cz);if(chunks.has(k)||cqueue.find(c=>c.cx===cx&&c.cz===cz))return;cqueue.push({cx,cz,pri});cqueue.sort((a,b)=>b.pri-a.pri);}
 async function processQueue(){if(cbusy||!cqueue.length)return;cbusy=true;const{cx,cz}=cqueue.shift(),k=ck(cx,cz);if(!chunks.has(k)){const mesh=buildChunk(cx,cz,lodSegs(cx,cz));scene.add(mesh);chunks.set(k,{mesh,cx,cz});spawnDecor(cx,cz);}cbusy=false;}
 function updateChunks(){const px=ppos.x,pz=ppos.z;const cx=Math.floor(px/CSIZ),cz=Math.floor(pz/CSIZ);PCX=cx;PCZ=cz;if(cx===lPCX&&cz===lPCZ)return;lPCX=cx;lPCZ=cz;for(let dz=-LOAD_R;dz<=LOAD_R;dz++)for(let dx=-LOAD_R;dx<=LOAD_R;dx++)scheduleChunk(cx+dx,cz+dz,LOAD_R-Math.max(Math.abs(dx),Math.abs(dz)));for(const[k,{mesh,cx:ccx,cz:ccz}]of chunks){if(Math.max(Math.abs(ccx-cx),Math.abs(ccz-cz))>UNLOAD_R){scene.remove(mesh);cpool.length<40?cpool.push(mesh):mesh.geometry.dispose();chunks.delete(k);removeDecor(k);}}}
 
-// ════════════════════════════════════════════════════════════════════
-//  TREE SYSTEM  (GPU instanced — 2 draw calls)
-// ════════════════════════════════════════════════════════════════════
+// ── TREES ──
 function rng32(seed){return function(){seed|=0;seed=(seed+0x6D2B79F5)|0;let t=Math.imul(seed^(seed>>>15),1|seed);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
 const TRUNK_MAT=new THREE.MeshLambertMaterial({color:0x6b3e1e});
 const LEAF_MAT=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uDayT:{value:1.0}},vertexShader:`uniform float uTime;varying vec3 vN;void main(){vN=normalMatrix*normal;vec3 p=position;vec4 wp=modelMatrix*vec4(p,1.0);float wave=sin(uTime*1.3+wp.x*0.5+wp.z*0.4)*0.12+sin(uTime*0.8+wp.z*0.7)*0.07;p.x+=wave;p.z+=wave*0.6;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}`,fragmentShader:`varying vec3 vN;uniform float uDayT;void main(){float l=max(dot(normalize(vN),normalize(vec3(0.5,1.0,0.4))),0.0);vec3 col=vec3(0.18,0.54,0.12)*(0.5+l*0.6)*max(uDayT*0.8+0.2,0.2);gl_FragColor=vec4(col,1.0);}`});
@@ -468,9 +448,9 @@ let trunkIM,leafIM,rockIM,bushIM;
 const decorMap=new Map();
 const _M4=new THREE.Matrix4(),_V3=new THREE.Vector3(),_Q=new THREE.Quaternion(),_S=new THREE.Vector3(),_AY=new THREE.Vector3(0,1,0);
 function setIM(im,idx,x,y,z,sx,sy,sz,ry=0){_V3.set(x,y,z);_S.set(sx,sy,sz);_Q.setFromAxisAngle(_AY,ry);_M4.compose(_V3,_Q,_S);im.setMatrixAt(idx,_M4);im.instanceMatrix.needsUpdate=true;}
-function initTrees(){trunkIM=new THREE.InstancedMesh(TRUNK_GEO,TRUNK_MAT,MAX_TRUNK);leafIM=new THREE.InstancedMesh(LEAF_GEO,LEAF_MAT,MAX_LEAF);rockIM=new THREE.InstancedMesh(ROCK_GEO,ROCK_MAT,MAX_ROCK);bushIM=new THREE.InstancedMesh(BUSH_GEO,BUSH_MAT,MAX_BUSH);trunkIM.count=0;leafIM.count=0;rockIM.count=0;bushIM.count=0;trunkIM.castShadow=true;leafIM.castShadow=false;rockIM.castShadow=true;bushIM.castShadow=false;scene.add(trunkIM);scene.add(leafIM);scene.add(rockIM);scene.add(bushIM);}
-function densityFor(biome,h,slope){if(h<1.8)return{trees:0,rocks:0,bushes:0};if(slope>35)return{trees:0,rocks:1,bushes:0};switch(biome){case'forest':return{trees:h>14?3:5,rocks:0,bushes:1};case'plains':return{trees:h>6?1:0,rocks:0,bushes:1};case'hills':return{trees:h>4?2:1,rocks:1,bushes:1};case'mountain':return h>28?{trees:0,rocks:3,bushes:0}:h>18?{trees:0,rocks:2,bushes:0}:{trees:2,rocks:1,bushes:1};case'desert':return{trees:0,rocks:2,bushes:0};default:return{trees:1,rocks:0,bushes:0};}}
-function treeTypeFor(biome,h,rv){if(biome==='forest')return rv>0.85&&h>10?'ancient':rv>0.5?'large':'medium';if(biome==='mountain')return rv>0.6?'medium':'small';if(biome==='hills')return rv>0.7?'large':'medium';return rv>0.75?'medium':'small';}
+function initTrees(){trunkIM=new THREE.InstancedMesh(TRUNK_GEO,TRUNK_MAT,MAX_TRUNK);leafIM=new THREE.InstancedMesh(LEAF_GEO,LEAF_MAT,MAX_LEAF);rockIM=new THREE.InstancedMesh(ROCK_GEO,ROCK_MAT,MAX_ROCK);bushIM=new THREE.InstancedMesh(BUSH_GEO,BUSH_MAT,MAX_BUSH);trunkIM.count=0;leafIM.count=0;rockIM.count=0;bushIM.count=0;trunkIM.castShadow=true;scene.add(trunkIM);scene.add(leafIM);scene.add(rockIM);scene.add(bushIM);}
+function densityFor(biome,h,slope){if(h<1.8)return{trees:0,rocks:0,bushes:0};if(slope>35)return{trees:0,rocks:1,bushes:0};switch(biome){case'forest':return{trees:5,rocks:0,bushes:1};case'plains':return{trees:h>6?1:0,rocks:0,bushes:1};case'hills':return{trees:2,rocks:1,bushes:1};case'mountain':return h>28?{trees:0,rocks:3,bushes:0}:h>18?{trees:0,rocks:2,bushes:0}:{trees:2,rocks:1,bushes:1};case'desert':return{trees:0,rocks:2,bushes:0};default:return{trees:1,rocks:0,bushes:0};}}
+function treeTypeFor(biome,h,rv){if(biome==='forest')return rv>0.85&&h>10?'ancient':rv>0.5?'large':'medium';if(biome==='mountain')return rv>0.6?'medium':'small';return rv>0.7?'large':'medium';}
 const TREE_H={small:[3,5],medium:[5,8],large:[8,12],ancient:[12,18]};
 function addTree(wx,wy,wz,seed,typeKey,tList,lList){if(trunkIM.count>=MAX_TRUNK-3||leafIM.count>=MAX_LEAF-4)return;const r=rng32(seed);const[hMin,hMax]=TREE_H[typeKey];const th=hMin+r()*(hMax-hMin);const ry=r()*Math.PI*2;const trR=typeKey==='ancient'?0.5:typeKey==='large'?0.3:typeKey==='medium'?0.2:0.12;const lean=(r()-0.5)*0.15;const ti=trunkIM.count;setIM(trunkIM,ti,wx+lean,wy+th*0.5,wz+lean,trR,th,trR,ry);trunkIM.count++;tList.push(ti);const lc=typeKey==='ancient'?4:typeKey==='large'?3:2;for(let i=0;i<lc;i++){if(leafIM.count>=MAX_LEAF)break;const cr=(0.8+r()*0.7)*th*0.28;const cy=wy+th*(0.55+i*0.13)+(r()-0.5)*0.8;const cx2=wx+(r()-0.5)*cr*0.6+lean;const cz2=wz+(r()-0.5)*cr*0.6+lean;const cs=cr*(0.9+r()*0.5);const li=leafIM.count;setIM(leafIM,li,cx2,cy,cz2,cs,cs*(0.7+r()*0.5),cs,r()*Math.PI*2);leafIM.count++;lList.push(li);}}
 function addRock(wx,wy,wz,seed,rList){if(rockIM.count>=MAX_ROCK)return;const r=rng32(seed+777);const sc=0.4+r()*1.1;const ri=rockIM.count;setIM(rockIM,ri,wx,wy+sc*0.4,wz,sc*(0.8+r()*0.4),sc*(0.5+r()*0.5),sc*(0.8+r()*0.4),r()*Math.PI*2);rockIM.count++;rList.push(ri);}
@@ -480,57 +460,284 @@ function removeDecor(key){const entry=decorMap.get(key);if(!entry)return;swapRA(
 function swapRA(im,idxList,dmap,field){idxList.sort((a,b)=>b-a);for(const idx of idxList){const last=im.count-1;if(idx===last){im.count--;continue;}const tmpM=new THREE.Matrix4();im.getMatrixAt(last,tmpM);im.setMatrixAt(idx,tmpM);im.count--;for(const[,entry]of dmap){const arr=entry[field];const li=arr.indexOf(last);if(li!==-1)arr[li]=idx;}}im.instanceMatrix.needsUpdate=true;}
 function updateTrees(t,dayT){LEAF_MAT.uniforms.uTime.value=t;LEAF_MAT.uniforms.uDayT.value=dayT;}
 
-// ════════════════════════════════════════════════════════════════════
-//  SKY + LIGHTING + WATER
-// ════════════════════════════════════════════════════════════════════
-let skyMesh,skyU,worldT=0.35;
-const DAY_SPD=1/1200;
+// ── SKY ──
+let skyMesh,skyU,worldT=0.35;const DAY_SPD=1/1200;
 function buildSky(){skyU={uTime:{value:worldT},uSunDir:{value:new THREE.Vector3(0.4,0.7,0.3).normalize()},uMoonDir:{value:new THREE.Vector3(-0.4,-0.7,-0.3)},uDayT:{value:1}};const mat=new THREE.ShaderMaterial({side:THREE.BackSide,uniforms:skyU,vertexShader:`varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`varying vec3 vD;uniform float uTime,uDayT;uniform vec3 uSunDir,uMoonDir;float hsh(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.4)))*43758.5);}void main(){vec3 d=normalize(vD);float up=max(d.y,0.);vec3 daySky=mix(vec3(0.60,0.74,0.90),vec3(0.10,0.32,0.72),pow(up,0.5));float sd=max(dot(d,uSunDir),0.);daySky+=vec3(1.,0.95,0.65)*pow(sd,100.)*1.4+vec3(1.,0.6,0.2)*pow(sd,7.)*0.2;float hor=clamp(1.-abs(uSunDir.y)*2.8,0.,1.);daySky=mix(daySky,daySky+vec3(0.95,0.42,0.12)*0.6,hor*pow(max(dot(d,normalize(vec3(uSunDir.x,0.,uSunDir.z))),0.),4.));float stars=step(0.987,hsh(floor(d*140.)))*clamp(-uSunDir.y*4.+0.5,0.,1.);float md=max(dot(d,uMoonDir),0.);vec3 night=vec3(0.01,0.02,0.06)*max(1.-up,0.04)+vec3(stars)+vec3(0.75,0.8,1.)*pow(md,130.)*0.9;vec3 sky=mix(night,daySky,uDayT);sky=mix(sky,vec3(0.35,0.45,0.4)*uDayT+vec3(0.02,0.02,0.04),max(-d.y,0.)*0.5);gl_FragColor=vec4(sky,1.);}`});skyMesh=new THREE.Mesh(new THREE.SphereGeometry(500,20,12),mat);scene.add(skyMesh);}
 let sunL,ambL;
 function setupLights(){ambL=new THREE.AmbientLight(0x8ab4cc,0.38);scene.add(ambL);sunL=new THREE.DirectionalLight(0xfff5d0,1.1);sunL.position.set(200,300,100);sunL.castShadow=true;sunL.shadow.camera.near=1;sunL.shadow.camera.far=450;sunL.shadow.camera.left=-90;sunL.shadow.camera.right=90;sunL.shadow.camera.top=90;sunL.shadow.camera.bottom=-90;sunL.shadow.mapSize.set(isMob?512:1024,isMob?512:1024);sunL.shadow.bias=-0.001;scene.add(sunL);scene.add(new THREE.HemisphereLight(0x87ceeb,0x3a7a3a,0.22));}
-let waterU;
-function buildWater(){waterU={uT:{value:0}};const mat=new THREE.ShaderMaterial({uniforms:waterU,transparent:true,vertexShader:`uniform float uT;varying vec2 vUv;varying float vW;void main(){vUv=uv;vec3 p=position;p.y+=sin(p.x*0.09+uT)*0.3+sin(p.z*0.11+uT*0.6)*0.25;vW=p.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varying vec2 vUv;varying float vW;uniform float uT;void main(){vec3 c=mix(vec3(0.04,0.18,0.4),vec3(0.10,0.40,0.65),clamp(vW+0.5,0.,1.));float g=sin(vUv.x*30.+uT)*sin(vUv.y*28.-uT*0.7)*0.5+0.5;c+=vec3(0.12,0.22,0.30)*g*0.12;gl_FragColor=vec4(c,0.80);}`});const wm=new THREE.Mesh(new THREE.PlaneGeometry(800,800,4,4),mat);wm.rotation.x=-Math.PI/2;wm.position.y=1.2;scene.add(wm);}
-function updateSky(dt){worldT=(worldT+DAY_SPD*dt)%1.0;const ang=(worldT-0.25)*Math.PI*2;skyU.uSunDir.value.set(Math.cos(ang)*0.6,Math.sin(ang),Math.sin(ang)*0.4).normalize();skyU.uMoonDir.value.set(-skyU.uSunDir.value.x,-skyU.uSunDir.value.y,-skyU.uSunDir.value.z);const dayT=THREE.MathUtils.clamp(skyU.uSunDir.value.y*3+0.35,0,1);skyU.uDayT.value=dayT;skyU.uTime.value=worldT;if(skyMesh)skyMesh.position.copy(camera.position);if(sunL){sunL.position.copy(skyU.uSunDir.value).multiplyScalar(260);sunL.intensity=dayT*1.25;sunL.color.setRGB(_lrp(0.9,1.0,dayT),_lrp(0.4,0.95,dayT),_lrp(0.2,0.82,dayT));ambL.intensity=_lrp(0.04,0.38,dayT);}scene.fog.density=_lrp(0.012,0.006,dayT);scene.fog.color.setRGB(_lrp(0.03,0.60,dayT),_lrp(0.03,0.70,dayT),_lrp(0.05,0.82,dayT));const hh=Math.floor(worldT*24),mm=Math.floor((worldT*24-hh)*60);document.getElementById('tod').textContent=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${worldT<0.22||worldT>0.78?'NIGHT':worldT<0.5?'DAY':'DUSK'}`;return dayT;}
 
-// ════════════════════════════════════════════════════════════════════
-//  PHYSICS + PLAYER CONTROLLER  (unchanged from engine)
-// ════════════════════════════════════════════════════════════════════
+// ── WATER FIX: light blue, not dark blue ──
+let waterMesh,waterU;
+function buildWater(){
+  waterU={uT:{value:0}};
+  const mat=new THREE.ShaderMaterial({uniforms:waterU,transparent:true,depthWrite:false,
+    vertexShader:`uniform float uT;varying vec2 vUv;varying float vW;void main(){vUv=uv;vec3 p=position;p.y+=sin(p.x*0.09+uT)*0.28+sin(p.z*0.11+uT*0.6)*0.22;vW=p.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+    // FIX: use light blue base colors instead of dark navy
+    fragmentShader:`varying vec2 vUv;varying float vW;uniform float uT;void main(){vec3 shallow=vec3(0.30,0.72,0.88);vec3 deep=vec3(0.12,0.52,0.78);vec3 c=mix(shallow,deep,clamp(-vW*0.3+0.5,0.,1.));float g=sin(vUv.x*30.+uT)*sin(vUv.y*28.-uT*0.7)*0.5+0.5;c+=vec3(0.3,0.45,0.5)*g*0.08;c=min(c,vec3(1.));gl_FragColor=vec4(c,0.78);}`});
+  waterMesh=new THREE.Mesh(new THREE.PlaneGeometry(1200,1200,6,6),mat);
+  waterMesh.rotation.x=-Math.PI/2;
+  waterMesh.position.y=1.4;
+  scene.add(waterMesh);
+}
+function updateSky(dt){worldT=(worldT+DAY_SPD*dt)%1.0;const ang=(worldT-0.25)*Math.PI*2;skyU.uSunDir.value.set(Math.cos(ang)*0.6,Math.sin(ang),Math.sin(ang)*0.4).normalize();skyU.uMoonDir.value.set(-skyU.uSunDir.value.x,-skyU.uSunDir.value.y,-skyU.uSunDir.value.z);const dayT=THREE.MathUtils.clamp(skyU.uSunDir.value.y*3+0.35,0,1);skyU.uDayT.value=dayT;skyU.uTime.value=worldT;if(skyMesh)skyMesh.position.copy(camera.position);if(sunL){sunL.position.copy(skyU.uSunDir.value).multiplyScalar(260);sunL.intensity=dayT*1.25;sunL.color.setRGB(_lrp(0.9,1.0,dayT),_lrp(0.4,0.95,dayT),_lrp(0.2,0.82,dayT));ambL.intensity=_lrp(0.04,0.38,dayT);}scene.fog.density=_lrp(0.010,0.005,dayT);scene.fog.color.setRGB(_lrp(0.03,0.60,dayT),_lrp(0.03,0.70,dayT),_lrp(0.05,0.82,dayT));const hh=Math.floor(worldT*24),mm=Math.floor((worldT*24-hh)*60);document.getElementById('tod').textContent=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${worldT<0.22||worldT>0.78?'NIGHT':worldT<0.5?'DAY':'DUSK'}`;return dayT;}
+
+// ── PHYSICS ──
 const PLAYER_H=1.80,GRAVITY=-26,FALL_M=1.55,MAX_SLOPE=52,JUMP_FORCE=12;
 const PROBE=[[0,0],[0.45,0],[-0.45,0],[0,0.45],[0,-0.45]];
-const ppos=new THREE.Vector3(0,50,0);
-const pvel=new THREE.Vector3();
+const ppos=new THREE.Vector3(0,50,0);const pvel=new THREE.Vector3();
 let pGround=false,pCoyote=0,pJumpBuf=0,pSlope=0,pGroundY=0;
 function probeGround(x,z){let maxH=-Infinity,ax=0,az=0;for(const[ox,oz]of PROBE){const h=terrainH(x+ox,z+oz);if(h>maxH)maxH=h;const n=terrainNorm(x+ox,z+oz);ax+=n.x;az+=n.z;}const nx=ax/5,nz=az/5,ny=Math.sqrt(Math.max(1-nx*nx-nz*nz,0));return{groundY:maxH+PLAYER_H,slope:Math.acos(Math.min(ny,1))*180/Math.PI,nx,ny,nz};}
 
-// ════════════════════════════════════════════════════════════════════
-//  INPUT SYSTEM
-// ════════════════════════════════════════════════════════════════════
-const keys={};
-const JOY={x:0,y:0};
-let isSprinting=false;
-document.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space'){e.preventDefault();doJump();}if(e.code==='KeyE')tryInteract();if(e.code==='KeyI')openModal('inv-modal');if(e.code==='KeyQ')openModal('quest-modal');if(e.code==='KeyG')openModal('god-modal');if(e.code==='KeyK')openModal('kingdom-modal');if(e.code==='KeyF')openModal('craft-modal');if(e.code==='Escape')closeAllModals();if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSprinting=true;});
+// ── PLAYER CAPSULE (red = enemy, blue/white = player) ──
+let playerMesh,enemyMeshes=[];
+function buildPlayerMesh(){
+  const group=new THREE.Group();
+  // Body (capsule approximation using cylinder + spheres)
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,1.0,10),new THREE.MeshLambertMaterial({color:0x3498db}));
+  body.position.y=0.5;group.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.3,10,8),new THREE.MeshLambertMaterial({color:0xf5cba7}));
+  head.position.y=1.3;group.add(head);
+  const feet=new THREE.Mesh(new THREE.SphereGeometry(0.28,10,6),new THREE.MeshLambertMaterial({color:0x3498db}));
+  feet.position.y=0;group.add(feet);
+  group.castShadow=true;
+  scene.add(group);
+  return group;
+}
+function buildEnemyCapsule(wx,wy,wz){
+  const group=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,1.0,10),new THREE.MeshLambertMaterial({color:0xe74c3c}));
+  body.position.y=0.5;group.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.3,10,8),new THREE.MeshLambertMaterial({color:0xc0392b}));
+  head.position.y=1.3;group.add(head);
+  const feet=new THREE.Mesh(new THREE.SphereGeometry(0.28,10,6),new THREE.MeshLambertMaterial({color:0xe74c3c}));
+  feet.position.y=0;group.add(feet);
+  // HP bar sprite above head
+  const bar=new THREE.Mesh(new THREE.PlaneGeometry(0.8,0.07),new THREE.MeshBasicMaterial({color:0xe74c3c}));
+  bar.position.set(0,1.85,0);bar.name='hpbar';group.add(bar);
+  group.position.set(wx,wy,wz);
+  group.castShadow=true;
+  group.userData={hp:50,maxHp:50,type:'warrior',wx,wz};
+  scene.add(group);
+  return group;
+}
+
+// ── PROCEDURAL VILLAGE BUILDINGS ──
+// Since GLB not available over HTTP, build houses from Three.js geometry
+// house_1 = chief's house (large, unique)
+// house_2 = rich house (medium)
+// house_3 = common house (small, many)
+const HOUSE_MATS={
+  wall_1:new THREE.MeshLambertMaterial({color:0xc8a97a}),  // Chief - sandstone
+  wall_2:new THREE.MeshLambertMaterial({color:0x9e7b5a}),  // Rich - brown wood
+  wall_3:new THREE.MeshLambertMaterial({color:0x7a6850}),  // Common - worn wood
+  roof_1:new THREE.MeshLambertMaterial({color:0x8b4513}),  // Dark roof
+  roof_2:new THREE.MeshLambertMaterial({color:0x6b3410}),
+  roof_3:new THREE.MeshLambertMaterial({color:0x5a2e0e}),
+  path:new THREE.MeshLambertMaterial({color:0xd4b896}),    // Dirt path
+  door:new THREE.MeshLambertMaterial({color:0x4a2c10}),    // Door
+};
+
+function buildHouse(type,wx,wy,wz,ry=0){
+  const g=new THREE.Group();
+  let W,H,D,wallMat,roofMat;
+  if(type===1){W=5;H=3.5;D=6;wallMat=HOUSE_MATS.wall_1;roofMat=HOUSE_MATS.roof_1;}
+  else if(type===2){W=3.5;H=2.8;D=4;wallMat=HOUSE_MATS.wall_2;roofMat=HOUSE_MATS.roof_2;}
+  else{W=2.8;H=2.2;D=3.5;wallMat=HOUSE_MATS.wall_3;roofMat=HOUSE_MATS.roof_3;}
+  // Walls
+  const walls=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),wallMat);
+  walls.position.y=H/2;g.add(walls);
+  // Roof (pyramid)
+  const roofH=H*0.5+0.3;
+  const roofGeo=new THREE.ConeGeometry(Math.max(W,D)*0.72,roofH,4);
+  roofGeo.rotateY(Math.PI/4);
+  const roof=new THREE.Mesh(roofGeo,roofMat);
+  roof.position.y=H+roofH/2-0.1;g.add(roof);
+  // Door
+  const door=new THREE.Mesh(new THREE.BoxGeometry(0.7,1.2,0.1),HOUSE_MATS.door);
+  door.position.set(0,0.6,D/2+0.05);g.add(door);
+  // Windows
+  const winMat=new THREE.MeshBasicMaterial({color:0xadd8e6});
+  [-W*0.25,W*0.25].forEach(wx2=>{const w=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.1),winMat);w.position.set(wx2,H*0.55,D/2+0.05);g.add(w);});
+  g.position.set(wx,wy,wz);
+  g.rotation.y=ry;
+  g.castShadow=true;g.receiveShadow=true;
+  scene.add(g);
+  g.userData={type:'building',houseType:type};
+  return g;
+}
+
+function buildPathSegment(x1,z1,x2,z2,wy){
+  const dx=x2-x1,dz=z2-z1,len=Math.sqrt(dx*dx+dz*dz);
+  const path=new THREE.Mesh(new THREE.BoxGeometry(1.4,0.05,len),HOUSE_MATS.path);
+  path.position.set((x1+x2)/2,wy+0.02,(z1+z2)/2);
+  path.rotation.y=Math.atan2(dx,dz);
+  scene.add(path);
+  return path;
+}
+
+// VILLAGE GENERATOR
+const villages=[];
+let villageObjects=[];
+
+function generateVillage(seed,cx,cz){
+  const r=rng32(seed);
+  // Find flat-ish spot in chunk
+  const ox=cx*CSIZ+(r()-0.5)*CSIZ*0.6;
+  const oz=cz*CSIZ+(r()-0.5)*CSIZ*0.6;
+  const wy=terrainH(ox,oz);
+  if(wy<2||wy>18)return null;
+  const biome=getBiome(ox,oz);
+  if(biome==='mountain'||biome==='desert')return null;
+
+  const objs=[];
+  const npcSpawns=[];
+
+  // Chief house in center
+  const chiefH=buildHouse(1,ox,wy,oz,r()*Math.PI*2);
+  objs.push(chiefH);
+
+  // Rich houses (2-3)
+  const richCount=2+Math.floor(r()*2);
+  const richPos=[];
+  for(let i=0;i<richCount;i++){
+    const angle=(i/richCount)*Math.PI*2+r()*0.4;
+    const dist=8+r()*3;
+    const rx=ox+Math.cos(angle)*dist,rz=oz+Math.sin(angle)*dist;
+    const ry=terrainH(rx,rz);
+    const h=buildHouse(2,rx,ry,rz,r()*Math.PI*2);
+    objs.push(h);richPos.push({x:rx,z:rz,y:ry});
+    // Path from chief to rich house
+    buildPathSegment(ox,oz,rx,rz,Math.min(wy,ry));
+  }
+
+  // Common houses (4-7)
+  const commCount=4+Math.floor(r()*4);
+  for(let i=0;i<commCount;i++){
+    const angle=(i/commCount)*Math.PI*2+r()*0.5;
+    const dist=14+r()*6;
+    const cx2=ox+Math.cos(angle)*dist,cz2=oz+Math.sin(angle)*dist;
+    const cy=terrainH(cx2,cz2);
+    const h=buildHouse(3,cx2,cy,cz2,r()*Math.PI*2);
+    objs.push(h);
+    // Path from center
+    buildPathSegment(ox,oz,cx2,cz2,Math.min(wy,cy));
+    // NPC spawn at door
+    npcSpawns.push({x:cx2+1,z:cz2+2,y:cy,role:'merchant'});
+  }
+  // Chief NPC
+  npcSpawns.push({x:ox+2,z:oz+3.5,y:wy,role:'chief'});
+
+  const v={cx:ox,cz:oz,wy,name:generateVillageName(seed),objs,npcSpawns,discovered:false};
+  return v;
+}
+
+function generateVillageName(seed){
+  const r=rng32(seed+1234);
+  const pre=['River','Iron','Oak','Sun','Stone','Frost','Green','Gold','Silver','Wind'];
+  const suf=['bend','wood','vale','ford','haven','keep','shire','gate','fall','hold'];
+  return pre[Math.floor(r()*pre.length)]+suf[Math.floor(r()*suf.length)];
+}
+
+// Spawn villages near player on load
+function spawnNearbyVillages(){
+  const cx=Math.floor(ppos.x/CSIZ),cz=Math.floor(ppos.z/CSIZ);
+  // Try to place village in each of several candidate chunks
+  const candidates=[
+    [cx+4,cz+2],[cx-4,cz+3],[cx+3,cz-4],[cx-3,cz-3],
+    [cx+6,cz],[cx-5,cz+1],[cx,cz+5],[cx+2,cz-5]
+  ];
+  let placed=0;
+  for(const[vx,vz]of candidates){
+    if(placed>=3)break;
+    const seed=(vx*73856093^vz*19349663)>>>0;
+    const v=generateVillage(seed,vx,vz);
+    if(v){villages.push(v);placed++;
+      // Spawn NPCs at village
+      v.npcSpawns.forEach(ns=>spawnNPCMesh(ns.x,ns.y,ns.z,ns.role,v));}
+  }
+}
+
+// ── NPC MESH SYSTEM ──
+const npcMeshes=[];
+const NPC_MAT_MERCHANT=new THREE.MeshLambertMaterial({color:0xe67e22});
+const NPC_MAT_CHIEF=new THREE.MeshLambertMaterial({color:0xf1c40f});
+const NPC_MAT_VILLAGER=new THREE.MeshLambertMaterial({color:0x27ae60});
+const NPC_GEO_BODY=new THREE.CylinderGeometry(0.22,0.22,0.9,8);
+const NPC_GEO_HEAD=new THREE.SphereGeometry(0.24,8,6);
+
+function spawnNPCMesh(wx,wy,wz,role,village){
+  const mat=role==='merchant'?NPC_MAT_MERCHANT:role==='chief'?NPC_MAT_CHIEF:NPC_MAT_VILLAGER;
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(NPC_GEO_BODY,mat);body.position.y=0.45;g.add(body);
+  const head=new THREE.Mesh(NPC_GEO_HEAD,new THREE.MeshLambertMaterial({color:0xf5cba7}));head.position.y=1.05;g.add(head);
+  g.position.set(wx,wy,wz);
+  const NPC_NAMES_ALL=['Aiden','Mira','Torv','Selene','Bran','Lyra','Cael','Nara','Oswin','Vesper','Aldric','Freya'];
+  const NPC_JOBS_ALL={merchant:['Weapons Dealer','Food Seller','Potion Seller','General Trader'],chief:['Village Chief'],villager:['Villager','Farmer','Herbalist']};
+  const r=rng32((wx*1000+wz)|0+43219);
+  const nameArr=NPC_NAMES_ALL;
+  const jobArr=NPC_JOBS_ALL[role]||NPC_JOBS_ALL.villager;
+  g.userData={
+    isNPC:true,role,
+    name:nameArr[Math.floor(r()*nameArr.length)],
+    job:jobArr[Math.floor(r()*jobArr.length)],
+    village,wx,wz,
+    talkRadius:3.5,
+    shopItems:role==='merchant'?generateShopItems(role,r):null
+  };
+  scene.add(g);
+  npcMeshes.push(g);
+  return g;
+}
+
+function generateShopItems(role,r){
+  const allItems=[
+    {id:'iron_sword',name:'Iron Sword',icon:'⚔️',cat:'weapons',rar:'ri',price:{gold:5,silver:0},qty:1},
+    {id:'health_pot',name:'Health Potion',icon:'🧪',cat:'potions',rar:'ri',price:{gold:0,silver:8},qty:3},
+    {id:'ration',name:'Travel Ration',icon:'🍖',cat:'food',rar:'rc',price:{gold:0,silver:3},qty:5},
+    {id:'cooked_meal',name:'Cooked Meal',icon:'🍗',cat:'food',rar:'rc',price:{gold:0,silver:5},qty:3},
+    {id:'iron',name:'Iron Ore',icon:'🪨',cat:'resources',rar:'ri',price:{gold:0,silver:6},qty:10},
+    {id:'leather',name:'Leather',icon:'🟤',cat:'resources',rar:'rc',price:{gold:0,silver:4},qty:8},
+    {id:'arrow',name:'Arrows ×10',icon:'🏹',cat:'weapons',rar:'rc',price:{gold:0,silver:2},qty:20},
+    {id:'l_armor',name:'Leather Armor',icon:'🥋',cat:'armor',rar:'rc',price:{gold:3,silver:0},qty:1},
+    {id:'stamina_brew',name:'Stamina Brew',icon:'⚗️',cat:'potions',rar:'ri',price:{gold:1,silver:0},qty:2},
+    {id:'torch',name:'Torch',icon:'🔦',cat:'resources',rar:'rc',price:{gold:0,silver:1},qty:5},
+  ];
+  // Pick 4-6 random items
+  const shop=[];
+  const indices=[];
+  while(indices.length<Math.min(6,allItems.length)){
+    const i=Math.floor(r()*allItems.length);
+    if(!indices.includes(i)){indices.push(i);shop.push({...allItems[i]});}
+  }
+  return shop;
+}
+// ── INPUT / DPAD ──
+const keys={};const dpadState={up:false,down:false,left:false,right:false};
+let isSprinting=false;let movementEnabled=false;
+function dpadPress(dir){dpadState[dir]=true;document.getElementById('dpad-'+dir).classList.add('held');}
+function dpadRelease(dir){dpadState[dir]=false;document.getElementById('dpad-'+dir).classList.remove('held');}
+document.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space'){e.preventDefault();doJump();}if(e.code==='KeyE')tryInteract();if(e.code==='KeyI')openModal('inv-modal');if(e.code==='KeyQ')openModal('quest-modal');if(e.code==='KeyG')openModal('god-modal');if(e.code==='KeyK')openModal('kingdom-modal');if(e.code==='KeyF')openModal('craft-modal');if(e.code==='KeyM')openWorldMap();if(e.code==='Escape'){closeAllModals();closeWorldMap();closeMenu();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSprinting=true;});
 document.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSprinting=false;});
 let mlocked=false,camYaw=0,camPitch=0.18,camDist=5,yawD=0,pitchD=0;
-canvas.addEventListener('click',()=>{if(document.querySelector('.modal[style*="flex"]'))return;canvas.requestPointerLock();});
+canvas.addEventListener('click',()=>{if(document.querySelector('.modal[style*="flex"]'))return;canvas.requestPointerLock().catch(()=>{});});
 document.addEventListener('pointerlockchange',()=>{mlocked=document.pointerLockElement===canvas;});
 document.addEventListener('mousemove',e=>{if(!mlocked)return;yawD-=e.movementX*0.0024;pitchD-=e.movementY*0.0024;});
-let jId=null;const jBase=document.getElementById('jbase'),jKnob=document.getElementById('jknob');const JR=35;let jCX=0,jCY=0;
-function updateJoyCenter(){const r=jBase.getBoundingClientRect();jCX=r.left+r.width/2;jCY=r.top+r.height/2;}
-function applyJoy(px,py){let dx=px-jCX,dy=py-jCY;const mg=Math.sqrt(dx*dx+dy*dy);if(mg>JR){dx=dx/mg*JR;dy=dy/mg*JR;}JOY.x=dx/JR;JOY.y=dy/JR;jKnob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;}
-function resetJoy(){jId=null;JOY.x=0;JOY.y=0;jKnob.style.transform='translate(-50%,-50%)';}
-jBase.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();jBase.setPointerCapture(e.pointerId);jId=e.pointerId;updateJoyCenter();applyJoy(e.clientX,e.clientY);},{passive:false});
-jBase.addEventListener('pointermove',e=>{if(e.pointerId!==jId)return;e.preventDefault();applyJoy(e.clientX,e.clientY);},{passive:false});
-jBase.addEventListener('pointerup',e=>{if(e.pointerId===jId)resetJoy();});
-jBase.addEventListener('pointercancel',e=>{if(e.pointerId===jId)resetJoy();});
+// Touch-drag camera on canvas (not over any UI button)
 let camId=null,camLx=0,camLy=0;
-canvas.addEventListener('pointerdown',e=>{const jr=jBase.getBoundingClientRect();const overJ=e.clientX>=jr.left&&e.clientX<=jr.right&&e.clientY>=jr.top&&e.clientY<=jr.bottom;const rr=document.getElementById('rbtns').getBoundingClientRect();const overR=e.clientX>=rr.left&&e.clientX<=rr.right&&e.clientY>=rr.top&&e.clientY<=rr.bottom;if(overJ||overR||camId!==null)return;camId=e.pointerId;camLx=e.clientX;camLy=e.clientY;canvas.setPointerCapture(e.pointerId);});
-canvas.addEventListener('pointermove',e=>{if(e.pointerId!==camId)return;yawD+=(camLx-e.clientX)*0.005;pitchD+=(camLy-e.clientY)*0.005;camLx=e.clientX;camLy=e.clientY;});
-canvas.addEventListener('pointerup',e=>{if(e.pointerId===camId)camId=null;});
-canvas.addEventListener('pointercancel',e=>{if(e.pointerId===camId)camId=null;});
+canvas.addEventListener('pointerdown',e=>{
+  const dpad=document.getElementById('dpad').getBoundingClientRect();
+  const rbtns=document.getElementById('rbtns').getBoundingClientRect();
+  const overD=e.clientX>=dpad.left&&e.clientX<=dpad.right&&e.clientY>=dpad.top&&e.clientY<=dpad.bottom;
+  const overR=e.clientX>=rbtns.left&&e.clientX<=rbtns.right&&e.clientY>=rbtns.top&&e.clientY<=rbtns.bottom;
+  if(overD||overR||camId!==null)return;
+  camId=e.pointerId;camLx=e.clientX;camLy=e.clientY;
+  canvas.setPointerCapture(e.pointerId);
+},{passive:true});
+canvas.addEventListener('pointermove',e=>{if(e.pointerId!==camId)return;yawD+=(camLx-e.clientX)*0.005;pitchD+=(camLy-e.clientY)*0.005;camLx=e.clientX;camLy=e.clientY;},{passive:true});
+canvas.addEventListener('pointerup',e=>{if(e.pointerId===camId)camId=null;},{passive:true});
+canvas.addEventListener('pointercancel',e=>{if(e.pointerId===camId)camId=null;},{passive:true});
 
-// ════════════════════════════════════════════════════════════════════
-//  KINGDOM DATA  (deterministic from WORLD_SEED via FBM)
-// ════════════════════════════════════════════════════════════════════
+// ── KINGDOMS ──
 const KINGDOMS={
   sun:{id:'sun',name:'Kingdom of Sun',icon:'☀️',col:'#f39c12',terrain:'Desert · Oasis · Dunes',resources:'Gold · Sun Crystals',structures:'Pyramids · Sun Temples',boss:'Sun Titan',rep:0,military:75,economy:80,pop:2400,capitalX:200,capitalZ:-180,atWarWith:[]},
   water:{id:'water',name:'Kingdom of Water',icon:'🌊',col:'#3498db',terrain:'Rivers · Lakes · Islands',resources:'Fish · Pearls',structures:'Harbors · Water Temples',boss:'Leviathan',rep:0,military:60,economy:90,pop:3100,capitalX:-220,capitalZ:-200,atWarWith:[]},
@@ -539,287 +746,429 @@ const KINGDOMS={
 };
 const REP_LABELS=['Enemy','Untrusted','Neutral','Friend','Hero','Champion'];
 function repLabel(k){const r=KINGDOMS[k].rep;if(r<=-40)return REP_LABELS[0];if(r<-10)return REP_LABELS[1];if(r<20)return REP_LABELS[2];if(r<50)return REP_LABELS[3];if(r<80)return REP_LABELS[4];return REP_LABELS[5];}
-function repColor(k){const l=repLabel(k);return{Enemy:'#e74c3c',Untrusted:'#e67e22',Neutral:'#aaa',Friend:'#2ecc71',Hero:'#3498db',Champion:'#f39c12'}[l];}
+function repColor(k){return{Enemy:'#e74c3c',Untrusted:'#e67e22',Neutral:'#aaa',Friend:'#2ecc71',Hero:'#3498db',Champion:'#f39c12'}[repLabel(k)];}
 
-// ════════════════════════════════════════════════════════════════════
-//  GOD SYSTEM
-// ════════════════════════════════════════════════════════════════════
+// ── GODS ──
 const GODS={
-  sun:{id:'sun',name:'Sun God — Ra',icon:'☀️',col:'#f39c12',desc:'Master of heat, light, and ancient power. Grants fire abilities and desert survival.',powers:['Solar Flare (dmg)','Heat Aura (warmth)','Sun Vision (map reveal)'],potions:[{name:'Solar Draft L1',eff:'+30 HP, warm',icon:'🔥'},{name:'Solar Draft L2',eff:'+60 HP, fire resist',icon:'🌋'},{name:'Elixir of Ra',eff:'Invincible 30s',icon:'☀️'}]},
-  water:{id:'water',name:'Water God — Thalassa',icon:'🌊',col:'#3498db',desc:'Ruler of oceans and rain. Grants water breathing, healing rain and storm control.',powers:['Healing Rain','Tidal Force (push)','Storm Call (aoe)'],potions:[{name:'Tide Vial L1',eff:'+30 HP, breathe water',icon:'💧'},{name:'Tide Vial L2',eff:'+60 HP, swim speed',icon:'🌊'},{name:'Elixir of Thalassa',eff:'Unlimited stamina 60s',icon:'🌀'}]},
-  forest:{id:'forest',name:'Forest God — Sylvanus',icon:'🌲',col:'#2ecc71',desc:'Ancient spirit of wood and wild. Grants nature affinity, animal bond, and rapid healing.',powers:['Thornwall (defense)','Nature Bond (animals)','Regrowth (regen)'],potions:[{name:'Herb Brew L1',eff:'+30 HP, night vision',icon:'🌿'},{name:'Herb Brew L2',eff:'+60 HP, camouflage',icon:'🍃'},{name:'Elixir of Sylvanus',eff:'Unlimited HP regen 45s',icon:'🌳'}]},
-  tech:{id:'tech',name:'Tech God — Mechanis',icon:'⚙️',col:'#9b59b6',desc:'God of invention and machinery. Grants gadget mastery, energy shields, and enhanced tools.',powers:['Energy Shield','Gadget Overcharge','Machine Mind (blueprints)'],potions:[{name:'Circuit Brew L1',eff:'+30 HP, speed boost',icon:'⚡'},{name:'Circuit Brew L2',eff:'+60 HP, shield charge',icon:'🔋'},{name:'Elixir of Mechanis',eff:'All stats max 60s',icon:'⚙️'}]}
+  sun:{id:'sun',name:'Sun God — Ra',icon:'☀️',col:'#f39c12',desc:'Master of heat, light, and ancient power.',powers:['Solar Flare','Heat Aura','Sun Vision'],potions:[{name:'Solar Draft L1',eff:'+30 HP',icon:'🔥'},{name:'Solar Draft L2',eff:'+60 HP',icon:'🌋'},{name:'Elixir of Ra',eff:'Invincible 30s',icon:'☀️'}]},
+  water:{id:'water',name:'Water God — Thalassa',icon:'🌊',col:'#3498db',desc:'Ruler of oceans and storms.',powers:['Healing Rain','Tidal Force','Storm Call'],potions:[{name:'Tide Vial L1',eff:'+30 HP',icon:'💧'},{name:'Tide Vial L2',eff:'+60 HP',icon:'🌊'},{name:'Elixir of Thalassa',eff:'Unlimited stamina 60s',icon:'🌀'}]},
+  forest:{id:'forest',name:'Forest God — Sylvanus',icon:'🌲',col:'#2ecc71',desc:'Ancient spirit of wood and wild.',powers:['Thornwall','Nature Bond','Regrowth'],potions:[{name:'Herb Brew L1',eff:'+30 HP',icon:'🌿'},{name:'Herb Brew L2',eff:'+60 HP',icon:'🍃'},{name:'Elixir of Sylvanus',eff:'HP regen 45s',icon:'🌳'}]},
+  tech:{id:'tech',name:'Tech God — Mechanis',icon:'⚙️',col:'#9b59b6',desc:'God of invention and machinery.',powers:['Energy Shield','Gadget Overcharge','Machine Mind'],potions:[{name:'Circuit Brew L1',eff:'+30 HP',icon:'⚡'},{name:'Circuit Brew L2',eff:'+60 HP',icon:'🔋'},{name:'Elixir of Mechanis',eff:'All stats max 60s',icon:'⚙️'}]}
 };
 
-// ════════════════════════════════════════════════════════════════════
-//  NPC SYSTEM  (procedurally generated from seed)
-// ════════════════════════════════════════════════════════════════════
-const NPC_NAMES=['Aiden','Mira','Torv','Selene','Bran','Lyra','Cael','Nara','Oswin','Vesper','Aldric','Freya','Daven','Sola','Kiran'];
-const NPC_JOBS=['Villager','Merchant','Guard','Priest','Scholar','Traveler','Farmer','Blacksmith','Herbalist','Fisher'];
-const NPC_TYPES=['villager','merchant','guard','priest','scholar'];
-
-function generateNPC(seed,kingdom){
-  const r=rng32(seed);
-  const nameIdx=Math.floor(r()*NPC_NAMES.length);
-  const jobIdx=Math.floor(r()*NPC_JOBS.length);
-  const k=KINGDOMS[kingdom];
-  return{name:NPC_NAMES[nameIdx],job:NPC_JOBS[jobIdx],kingdom,icon:k.icon,type:NPC_TYPES[Math.floor(r()*NPC_TYPES.length)],rep:Math.floor(r()*20-5)};
+// ── MONEY SYSTEM ──
+// 10 silver = 1 gold; 50 gold = 1 emerald
+const wallet={gold:0,silver:10,emerald:0};
+function totalSilver(){return wallet.emerald*50*10+wallet.gold*10+wallet.silver;}
+function spendSilver(amount){
+  const total=totalSilver();
+  if(total<amount)return false;
+  let rem=total-amount;
+  wallet.emerald=Math.floor(rem/(50*10));rem-=wallet.emerald*50*10;
+  wallet.gold=Math.floor(rem/10);rem-=wallet.gold*10;
+  wallet.silver=rem;
+  updateMoneyHUD();return true;
 }
-
-// Near-player NPC encounter
-let nearNPC=null;
-let npcEncounterTimer=0;
-const NPC_ENCOUNTER_INTERVAL=60; // seconds
-
-function tickNPCEncounters(dt){
-  npcEncounterTimer-=dt;
-  if(npcEncounterTimer<=0){
-    npcEncounterTimer=NPC_ENCOUNTER_INTERVAL*(0.8+Math.random()*0.4);
-    const kd=getKingdom(ppos.x,ppos.z);
-    const seed=(Math.floor(ppos.x/10)*7919^Math.floor(ppos.z/10)*48611)>>>0;
-    nearNPC=generateNPC(seed,kd);
-    document.getElementById('ipr').style.display='block';
-    document.getElementById('ipr').textContent=`[ E ] Talk to ${nearNPC.name} the ${nearNPC.job}`;
-    setTimeout(()=>{if(!dlgOpen)document.getElementById('ipr').style.display='none';},5000);
-  }
+function earnMoney(gold=0,silver=0){
+  wallet.silver+=silver;wallet.gold+=gold;
+  wallet.gold+=Math.floor(wallet.silver/10);wallet.silver=wallet.silver%10;
+  wallet.emerald+=Math.floor(wallet.gold/50);wallet.gold=wallet.gold%50;
+  updateMoneyHUD();
 }
+function updateMoneyHUD(){
+  document.getElementById('hud-gold').textContent=wallet.gold;
+  document.getElementById('hud-silver').textContent=wallet.silver;
+  document.getElementById('hud-emerald').textContent=wallet.emerald;
+}
+function priceStr(price){const p=[];if(price.gold)p.push(`🪙${price.gold}g`);if(price.silver)p.push(`🥈${price.silver}s`);return p.join(' ')||'Free';}
+function priceCostSilver(price){return(price.gold||0)*10+(price.silver||0);}
 
-// ════════════════════════════════════════════════════════════════════
-//  DIALOGUE SYSTEM
-// ════════════════════════════════════════════════════════════════════
+// ── DIALOGUE SYSTEM ──
 let dlgOpen=false;
 const DIALOGUES={
-  villager:["Life is peaceful here in the {kingdom}. Though I heard rumblings of war to the east…","Have you spoken to the priest at the temple? They say the gods grow restless.","Travelers are rare here. Stay safe on the roads — bandits lurk in the hills."],
-  merchant:["I trade goods across all four kingdoms. Reputation matters more than gold here.","Looking for supplies? I can trade if you have resources.","The {kingdom} produces the finest {resource}. Worth its weight in gold."],
-  guard:["Halt, stranger. State your business in {kingdom}.","You're either very brave or very lost to wander these lands alone.","The King has posted bounties on the mountain bandits. Good coin if you're interested."],
-  priest:["The gods have chosen this land for a reason. Have you felt their call?","Should you seek divine power, visit the temple in the capital.","Not all who wander are lost… but most are."],
-  scholar:["Fascinating! I've been mapping the kingdom borders. The FBM noise patterns reveal much.","The ancient temples predate the kingdoms themselves, you know.","There are four endings to this world's story. Only the truly aware find them all."]
+  villager:["Life is peaceful here in the {kingdom}. I heard rumblings of war to the east though.","The priest at the temple says the gods grow restless. Strange times.","Traveler, be careful on the roads — bandits lurk in the hills."],
+  merchant:["Welcome! I have goods for sale. What do you need?","I trade across all four kingdoms. Gold and silver speak every language.","My wares are the finest in {kingdom}. Come, browse!"],
+  guard:["State your business in {kingdom}, traveler.","You're either brave or very lost to wander these lands alone.","The King has posted bounties on mountain bandits. Interested?"],
+  priest:["Have you felt the call of the gods? Visit the temple when you are ready.","Not all who wander are lost… but most are.","The temples hold the key to divine power. Seek them out."],
+  chief:["Welcome to {village}. I am the chief here. How can I help you?","Our village needs brave adventurers. Perhaps I have a task worthy of you?","Protect our people and you will always have a home here."]
 };
-function getDialogue(npc){const lines=DIALOGUES[npc.type]||DIALOGUES.villager;const line=lines[Math.floor(Math.random()*lines.length)];const k=KINGDOMS[npc.kingdom];return line.replace('{kingdom}',k.name).replace('{resource}',k.resources.split('·')[0].trim());}
-function showDialogue(npc){dlgOpen=true;document.getElementById('dlg-box').style.display='block';document.getElementById('dlg-npc').textContent=`${npc.icon} ${npc.name} — ${npc.job}`;document.getElementById('dlg-text').textContent=getDialogue(npc);const ch=document.getElementById('dlg-choices');const choices=buildChoices(npc);ch.innerHTML=choices.map((c,i)=>`<div class="dchoice" onclick="pickChoice(${i})">${c.text}</div>`).join('');window._dlgChoices=choices;window._dlgNPC=npc;}
-function buildChoices(npc){const base=[{text:'What can you tell me about this kingdom?',cb:()=>showKingdomInfo(npc)},{text:'Any quests available?',cb:()=>{closeDlg();acceptRandomQuest(npc);}},{text:'Farewell.',cb:()=>closeDlg()}];if(npc.type==='merchant')base.splice(1,0,{text:'Trade resources.',cb:()=>tradeResources(npc)});if(npc.type==='priest')base.splice(1,0,{text:'Tell me about the gods.',cb:()=>{closeDlg();openModal('god-modal');}});return base;}
-function pickChoice(i){const c=window._dlgChoices[i];if(c&&c.cb)c.cb();}
-function showKingdomInfo(npc){const k=KINGDOMS[npc.kingdom];document.getElementById('dlg-text').textContent=`The ${k.name} controls ${k.terrain}. We produce ${k.resources}. Our army numbers ${k.military} thousand strong.`;const ch=document.getElementById('dlg-choices');ch.innerHTML=`<div class="dchoice" onclick="closeDlg()">I see. Thank you.</div><div class="dchoice" onclick="gainRep('${npc.kingdom}',5)">Compliment the kingdom (+5 rep)</div>`;}
-function closeDlg(){dlgOpen=false;document.getElementById('dlg-box').style.display='none';document.getElementById('ipr').style.display='none';}
-function tradeResources(npc){const k=KINGDOMS[npc.kingdom];addToast(`${npc.name} traded 3x ${k.resources.split('·')[0].trim()} for your stone.`);addItem({id:'trade_res',name:k.resources.split('·')[0].trim().toLowerCase().replace(' ','_'),icon:k.icon,cat:'resources',rar:'ri',qty:3});closeDlg();}
-
-// ════════════════════════════════════════════════════════════════════
-//  QUEST SYSTEM
-// ════════════════════════════════════════════════════════════════════
-const QUEST_POOL=[
-  {id:'q1',title:'The Missing Merchant',type:'main',tag:'qt-main',desc:'A merchant vanished on the road between kingdoms. Investigate the last known location.',reward:'500 XP · Iron Sword',done:false,accepted:false},
-  {id:'q2',title:'Sun Crystal Collection',type:'kingdom',tag:'qt-king',kingdom:'sun',desc:'Gather 5 Sun Crystals from the desert for the Sun Kingdom\'s temple ritual.',reward:'200 XP · Gold Ore x3',done:false,accepted:false},
-  {id:'q3',title:'Forest Herb Medicine',type:'village',tag:'qt-vill',desc:'The village healer needs 8 Forest Herbs to cure a sickness spreading through the town.',reward:'150 XP · Health Potion x2',done:false,accepted:false},
-  {id:'q4',title:'Trial of the Sun God',type:'god',tag:'qt-god',kingdom:'sun',desc:'Prove your worth to the Sun God by surviving 3 days in the desert without shelter.',reward:'God Favor · Solar Draft L2',done:false,accepted:false},
-  {id:'q5',title:'Bandit Bounty',type:'bounty',tag:'qt-boun',desc:'The Kingdom of Tech has placed a bounty on the mountain bandits. Defeat 5 of them.',reward:'300 XP · 50 Gold',done:false,accepted:false},
-  {id:'q6',title:'Ancient Temple Map',type:'exploration',tag:'qt-expl',desc:'An old map leads to a hidden temple deep in the forest. Find it and bring back a relic.',reward:'400 XP · Ancient Relic',done:false,accepted:false},
-  {id:'q7',title:'Leviathan\'s Wrath',type:'main',tag:'qt-main',desc:'The sea monster Leviathan has been spotted near the Water Kingdom\'s harbor. Warn the captain.',reward:'600 XP · Pearl Armor',done:false,accepted:false},
-  {id:'q8',title:'Tech Kingdom Spy',type:'kingdom',tag:'qt-king',kingdom:'tech',desc:'The Tech Kingdom suspects a spy in their factory. Investigate and report back to the Commander.',reward:'350 XP · Energy Crystal',done:false,accepted:false},
-  {id:'q9',title:'The Four God Prophecy',type:'main',tag:'qt-main',desc:'A scholar speaks of an ancient prophecy involving all four gods. Gather four divine relics.',reward:'800 XP · Prophecy Fragment',done:false,accepted:false},
-  {id:'q10',title:'Elder Treant\'s Grove',type:'exploration',tag:'qt-expl',desc:'Locals whisper of a living tree the size of a mountain. Find the Elder Treant\'s Grove.',reward:'500 XP · Wood Relic',done:false,accepted:false},
-];
-let activeQuests=[];
-let currentQuestFilter='active';
-function acceptRandomQuest(npc){const available=QUEST_POOL.filter(q=>!q.accepted&&!q.done);if(!available.length){addToast('No new quests available.');return;}const q=available[Math.floor(Math.random()*available.length)];q.accepted=true;activeQuests.push(q);addToast(`New Quest: "${q.title}"`);gainXP(50);}
-function acceptQuest(id){const q=QUEST_POOL.find(q=>q.id===id);if(!q||q.accepted)return;q.accepted=true;activeQuests.push(q);addToast(`Quest Accepted: "${q.title}"`);gainXP(50);renderQuests();}
-function completeQuest(id){const q=activeQuests.find(q=>q.id===id);if(!q)return;q.done=true;activeQuests=activeQuests.filter(aq=>aq.id!==id);gainXP(200);addToast(`✅ Quest Complete: "${q.title}" — ${q.reward}`);}
-
-// ════════════════════════════════════════════════════════════════════
-//  SURVIVAL SYSTEM
-// ════════════════════════════════════════════════════════════════════
-const survival={hunger:80,maxHunger:100,thirst:100,maxThirst:100,sleep:90,maxSleep:100,temperature:20};
-function tickSurvival(dt){
-  const biome=getBiome(ppos.x,ppos.z);
-  survival.hunger=Math.max(0,survival.hunger-0.4*dt);
-  survival.thirst=Math.max(0,survival.thirst-0.6*dt);
-  survival.sleep=Math.max(0,survival.sleep-0.2*dt);
-  if(biome==='desert')survival.temperature=Math.min(45,survival.temperature+0.5*dt);
-  else survival.temperature=Math.max(10,survival.temperature-0.1*dt);
-  // Effects
-  if(survival.hunger<20)player.sta=Math.max(0,player.sta-5*dt);
-  if(survival.thirst<20){player.hp=Math.max(1,player.hp-2*dt);player.sta=Math.max(0,player.sta-8*dt);}
-  if(survival.temperature>40)player.hp=Math.max(1,player.hp-3*dt);
-  updateSurvivalHUD();
+function getDialogue(npc){const lines=DIALOGUES[npc.role]||DIALOGUES.villager;const line=lines[Math.floor(Math.random()*lines.length)];const k=KINGDOMS[getKingdom(ppos.x,ppos.z)];const vname=npc.village?npc.village.name:'this land';return line.replace('{kingdom}',k.name).replace('{village}',vname);}
+function showDialogue(npc){
+  dlgOpen=true;
+  document.getElementById('dlg-box').style.display='block';
+  document.getElementById('dlg-npc-ico').textContent=npc.role==='merchant'?'🧑‍💼':npc.role==='chief'?'👑':npc.role==='guard'?'💂':'👤';
+  document.getElementById('dlg-npc').textContent=`${npc.name} — ${npc.job}`;
+  document.getElementById('dlg-text').textContent=getDialogue(npc);
+  const ch=document.getElementById('dlg-choices');
+  const choices=buildChoices(npc);
+  ch.innerHTML=choices.map((c,i)=>`<div class="dchoice" onclick="pickChoice(${i})">${c.text}</div>`).join('');
+  window._dlgChoices=choices;window._dlgNPC=npc;
 }
-function updateSurvivalHUD(){document.getElementById('hgbf').style.width=(survival.hunger/survival.maxHunger*100)+'%';document.getElementById('thbf').style.width=(survival.thirst/survival.maxThirst*100)+'%';document.getElementById('slpbf').style.width=(survival.sleep/survival.maxSleep*100)+'%';}
-function eatFood(name,hungerRestore,hpRestore){survival.hunger=Math.min(survival.maxHunger,survival.hunger+hungerRestore);player.hp=Math.min(player.maxHp,player.hp+hpRestore);addToast(`Ate ${name} — Hunger +${hungerRestore}, HP +${hpRestore}`);}
-function drinkWater(amount){survival.thirst=Math.min(survival.maxThirst,survival.thirst+amount);addToast(`Drank water — Thirst +${amount}`);}
-function sleep(){survival.sleep=survival.maxSleep;player.hp=Math.min(player.maxHp,player.hp+30);player.sta=player.maxSta;addToast('Slept well. HP restored, stamina full.');}
+function buildChoices(npc){
+  const base=[{text:'Farewell.',cb:()=>closeDlg()}];
+  if(npc.role==='merchant'&&npc.shopItems){
+    base.unshift({text:'🛒 Browse your wares.',cb:()=>{closeDlg();openShop(npc);}});
+  }
+  if(npc.role==='chief'||npc.role==='priest'){
+    base.unshift({text:'Any quests for me?',cb:()=>{closeDlg();acceptRandomQuest(npc);}});
+  }
+  if(npc.role==='priest'){
+    base.unshift({text:'Tell me about the gods.',cb:()=>{closeDlg();openModal('god-modal');}});
+  }
+  base.unshift({text:`Tell me about ${npc.village?npc.village.name:'this area'}.`,cb:()=>showAreaInfo(npc)});
+  return base;
+}
+function pickChoice(i){const c=window._dlgChoices[i];if(c&&c.cb)c.cb();}
+function showAreaInfo(npc){
+  const k=KINGDOMS[getKingdom(ppos.x,ppos.z)];
+  const vname=npc.village?npc.village.name:'this area';
+  document.getElementById('dlg-text').textContent=`${vname} lies in the ${k.name}. We trade in ${k.resources}. Our people number in the hundreds. Reputation matters greatly here — help our people to earn trust.`;
+  document.getElementById('dlg-choices').innerHTML=`<div class="dchoice" onclick="gainRep('${k.id}',3)">Offer help (+3 rep)</div><div class="dchoice" onclick="closeDlg()">Thank you.</div>`;
+}
+function closeDlg(){dlgOpen=false;document.getElementById('dlg-box').style.display='none';document.getElementById('ipr').style.display='none';}
 
-// ════════════════════════════════════════════════════════════════════
-//  WEATHER SYSTEM
-// ════════════════════════════════════════════════════════════════════
-const WEATHERS=[{name:'Clear',icon:'☀️',fogMult:1.0,tempMod:0},{name:'Rain',icon:'🌧️',fogMult:0.7,tempMod:-5},{name:'Storm',icon:'⛈️',fogMult:0.5,tempMod:-8},{name:'Heatwave',icon:'🔥',fogMult:1.0,tempMod:+12},{name:'Fog',icon:'🌫️',fogMult:0.4,tempMod:-2}];
+// ── SHOP SYSTEM ──
+let currentShopNPC=null;
+function openShop(npc){
+  currentShopNPC=npc;
+  document.getElementById('shop-title').textContent=`${npc.name}'s Shop`;
+  renderShop(npc.shopItems);
+  openModal('shop-modal');
+}
+function renderShop(items){
+  const el=document.getElementById('shop-list');
+  el.innerHTML=`<div style="font-size:9px;color:rgba(255,255,255,0.35);padding:6px 2px 10px;">Your wallet: 🪙${wallet.gold}g 🥈${wallet.silver}s 💎${wallet.emerald}e</div>`;
+  el.innerHTML+=items.map((item,i)=>{
+    const cost=priceCostSilver(item.price);
+    const canAfford=totalSilver()>=cost;
+    return`<div class="shop-row"><div class="shop-ico">${item.icon}</div><div class="shop-inf"><div class="shop-nm">${item.name}${item.qty>1?` ×${item.qty}`:''}</div><div class="shop-pr">${priceStr(item.price)}</div></div><button class="buy-btn" onclick="buyItem(${i})" ${canAfford?'':'disabled'}>Buy</button></div>`;
+  }).join('');
+}
+function buyItem(idx){
+  if(!currentShopNPC)return;
+  const item=currentShopNPC.shopItems[idx];
+  if(!item)return;
+  const cost=priceCostSilver(item.price);
+  if(!spendSilver(cost)){addNotif('Not enough money!','');return;}
+  addItem({...item,qty:1});
+  addNotif(`Bought: ${item.icon} ${item.name} for ${priceStr(item.price)}`,'');
+  renderShop(currentShopNPC.shopItems);
+}
+
+// ── QUEST SYSTEM ──
+const QUEST_POOL=[
+  {id:'q0',title:'The First Journey',type:'main',tag:'qt-main',desc:'Reach the nearest village and introduce yourself to the locals.',reward:'100 XP · Map Revealed',done:false,accepted:true},
+  {id:'q1',title:'The Missing Merchant',type:'main',tag:'qt-main',desc:'A merchant vanished on the road between kingdoms. Investigate.',reward:'500 XP · Iron Sword',done:false,accepted:false},
+  {id:'q2',title:'Sun Crystal Collection',type:'kingdom',tag:'qt-king',desc:'Gather 5 Sun Crystals from the desert for the temple ritual.',reward:'200 XP · Gold Ore ×3',done:false,accepted:false},
+  {id:'q3',title:'Forest Herb Medicine',type:'village',tag:'qt-vill',desc:'The village healer needs 8 Forest Herbs to cure a sickness.',reward:'150 XP · Health Potion ×2',done:false,accepted:false},
+  {id:'q4',title:'Trial of the Sun God',type:'god',tag:'qt-god',desc:'Prove your worth to Ra by surviving 3 days in the desert.',reward:'God Favor · Solar Draft L2',done:false,accepted:false},
+  {id:'q5',title:'Bandit Bounty',type:'bounty',tag:'qt-boun',desc:'The Tech Kingdom posted a bounty on mountain bandits. Defeat 5.',reward:'300 XP · 50 Silver',done:false,accepted:false},
+  {id:'q6',title:'Ancient Temple Map',type:'exploration',tag:'qt-expl',desc:'An old map leads to a hidden temple in the forest. Find it.',reward:'400 XP · Ancient Relic',done:false,accepted:false},
+  {id:'q7',title:"Leviathan's Wrath",type:'main',tag:'qt-main',desc:'A sea monster has been spotted near the Water Kingdom harbor.',reward:'600 XP · Pearl Armor',done:false,accepted:false},
+  {id:'q8',title:'Protect the Village',type:'village',tag:'qt-vill',desc:'Raiders are threatening a nearby village. Defend it tonight.',reward:'250 XP · 2 Gold',done:false,accepted:false},
+  {id:'q9',title:'The Four God Prophecy',type:'main',tag:'qt-main',desc:'A scholar speaks of a prophecy. Gather four divine relics.',reward:'800 XP · Prophecy Fragment',done:false,accepted:false},
+];
+let activeQuests=[QUEST_POOL[0]];let currentQuestFilter='active';
+function acceptRandomQuest(npc){const available=QUEST_POOL.filter(q=>!q.accepted&&!q.done);if(!available.length){addNotif('No new quests available.','');return;}const q=available[Math.floor(Math.random()*available.length)];q.accepted=true;activeQuests.push(q);addNotif(`New Quest: "${q.title}"`,'');gainXP(50);}
+function acceptQuest(id){const q=QUEST_POOL.find(q=>q.id===id);if(!q||q.accepted)return;q.accepted=true;activeQuests.push(q);addNotif(`Quest Accepted: "${q.title}"`,'');gainXP(50);renderQuests();}
+function completeQuest(id){const q=activeQuests.find(q=>q.id===id);if(!q)return;q.done=true;activeQuests=activeQuests.filter(aq=>aq.id!==id);gainXP(200);earnMoney(1,0);addNotif(`✅ Quest Complete: "${q.title}"`,'levelup');updateQuestTracker();}
+function updateQuestTracker(){const q=activeQuests.find(q=>!q.done);document.getElementById('qt-objective').textContent=q?q.title:'No active quests';}
+
+// ── SURVIVAL ──
+const survival={hunger:80,maxHunger:100,thirst:100,maxThirst:100,temperature:20};
+function tickSurvival(dt){const biome=getBiome(ppos.x,ppos.z);survival.hunger=Math.max(0,survival.hunger-0.4*dt);survival.thirst=Math.max(0,survival.thirst-0.6*dt);if(biome==='desert')survival.temperature=Math.min(45,survival.temperature+0.5*dt);else survival.temperature=Math.max(10,survival.temperature-0.1*dt);if(survival.hunger<20)player.sta=Math.max(0,player.sta-5*dt);if(survival.thirst<20){player.hp=Math.max(1,player.hp-2*dt);}if(survival.temperature>40)player.hp=Math.max(1,player.hp-3*dt);}
+
+// ── WEATHER ──
+const WEATHERS=[{name:'Clear',icon:'☀️'},{name:'Rain',icon:'🌧️'},{name:'Storm',icon:'⛈️'},{name:'Heatwave',icon:'🔥'},{name:'Fog',icon:'🌫️'}];
 let currentWeather=WEATHERS[0];let weatherTimer=120;
-function tickWeather(dt){weatherTimer-=dt;if(weatherTimer<=0){weatherTimer=90+Math.random()*120;currentWeather=WEATHERS[Math.floor(Math.random()*WEATHERS.length)];addToast(`Weather: ${currentWeather.icon} ${currentWeather.name}`);document.getElementById('weather-pill').textContent=`${currentWeather.icon} ${currentWeather.name}`;}survival.temperature+=currentWeather.tempMod*dt*0.01;}
+function tickWeather(dt){weatherTimer-=dt;if(weatherTimer<=0){weatherTimer=90+Math.random()*120;currentWeather=WEATHERS[Math.floor(Math.random()*WEATHERS.length)];addNotif(`Weather: ${currentWeather.icon} ${currentWeather.name}`,'');document.getElementById('weather-pill').textContent=`${currentWeather.icon} ${currentWeather.name}`;}}
 
-// ════════════════════════════════════════════════════════════════════
-//  WAR SYSTEM
-// ════════════════════════════════════════════════════════════════════
+// ── WAR ──
 let warTimer=300;
-function tickWar(dt){warTimer-=dt;if(warTimer<=0){warTimer=200+Math.random()*300;const kkeys=Object.keys(KINGDOMS);const k1=kkeys[Math.floor(Math.random()*kkeys.length)];let k2=kkeys[Math.floor(Math.random()*kkeys.length)];while(k2===k1)k2=kkeys[Math.floor(Math.random()*kkeys.length)];if(!KINGDOMS[k1].atWarWith.includes(k2)){KINGDOMS[k1].atWarWith.push(k2);KINGDOMS[k2].atWarWith.push(k1);document.getElementById('warbanner').style.display='block';document.getElementById('warbanner').textContent=`⚔️ ${KINGDOMS[k1].name} declared war on ${KINGDOMS[k2].name}!`;setTimeout(()=>document.getElementById('warbanner').style.display='none',5000);addToast(`War! ${KINGDOMS[k1].name} vs ${KINGDOMS[k2].name}`);}}}
+function tickWar(){warTimer--;if(warTimer<=0){warTimer=200+Math.random()*300;const kkeys=Object.keys(KINGDOMS);const k1=kkeys[Math.floor(Math.random()*kkeys.length)];let k2=kkeys[Math.floor(Math.random()*kkeys.length)];while(k2===k1)k2=kkeys[Math.floor(Math.random()*kkeys.length)];if(!KINGDOMS[k1].atWarWith.includes(k2)){KINGDOMS[k1].atWarWith.push(k2);KINGDOMS[k2].atWarWith.push(k1);const wb=document.getElementById('warbanner');wb.style.display='block';wb.textContent=`⚔️ ${KINGDOMS[k1].name} declared war on ${KINGDOMS[k2].name}!`;setTimeout(()=>wb.style.display='none',5000);}}}
 
-// ════════════════════════════════════════════════════════════════════
-//  REPUTATION SYSTEM
-// ════════════════════════════════════════════════════════════════════
-function gainRep(kingdom,amount){KINGDOMS[kingdom].rep=Math.min(100,KINGDOMS[kingdom].rep+amount);addToast(`${KINGDOMS[kingdom].icon} ${KINGDOMS[kingdom].name} reputation +${amount} → ${repLabel(kingdom)}`);updateRepHUD();}
-function loseRep(kingdom,amount){KINGDOMS[kingdom].rep=Math.max(-100,KINGDOMS[kingdom].rep-amount);addToast(`${KINGDOMS[kingdom].icon} ${KINGDOMS[kingdom].name} reputation -${amount} → ${repLabel(kingdom)}`);updateRepHUD();}
-function updateRepHUD(){const currentK=getKingdom(ppos.x,ppos.z);const k=KINGDOMS[currentK];document.getElementById('rep-pill').textContent=`${k.icon} ${repLabel(currentK)}`;document.getElementById('rep-pill').style.color=repColor(currentK);}
+// ── REPUTATION ──
+function gainRep(kingdom,amount){if(!KINGDOMS[kingdom])return;KINGDOMS[kingdom].rep=Math.min(100,KINGDOMS[kingdom].rep+amount);addNotif(`${KINGDOMS[kingdom].icon} Rep +${amount} → ${repLabel(kingdom)}`,'');updateRepHUD();}
+function loseRep(kingdom,amount){if(!KINGDOMS[kingdom])return;KINGDOMS[kingdom].rep=Math.max(-100,KINGDOMS[kingdom].rep-amount);addNotif(`${KINGDOMS[kingdom].icon} Rep -${amount} → ${repLabel(kingdom)}`,'');updateRepHUD();}
+function updateRepHUD(){const currentK=getKingdom(ppos.x,ppos.z);const k=KINGDOMS[currentK];if(!k)return;document.getElementById('rep-pill').textContent=`${k.icon} ${repLabel(currentK)}`;document.getElementById('rep-pill').style.color=repColor(currentK);}
 
-// ════════════════════════════════════════════════════════════════════
-//  PLAYER STATE  (full RPG stats)
-// ════════════════════════════════════════════════════════════════════
+// ── PLAYER STATE ──
 const player={
-  hp:100,maxHp:100,sta:100,maxSta:100,armor:0,maxArmor:100,
-  xp:0,maxXp:1000,level:1,
-  chosenGod:null,
-  suit:'basic',sprinting:false,
+  hp:100,maxHp:100,sta:100,maxSta:100,xp:0,maxXp:1000,level:1,
+  chosenGod:null,suit:'basic',sprinting:false,equip:{weapon:'basic_tool'},
   inv:[
-    {id:'basic_tool',name:'Basic Tool',  icon:'⛏️', cat:'weapons',  rar:'rc',qty:1,equip:true},
-    {id:'wood',      name:'Oak Wood',    icon:'🪵', cat:'resources', rar:'rc',qty:5},
-    {id:'stone',     name:'Stone',       icon:'🪨', cat:'resources', rar:'rc',qty:8},
-    {id:'herb',      name:'Forest Herb', icon:'🌿', cat:'resources', rar:'rc',qty:3},
-    {id:'water_f',   name:'Water Flask', icon:'💧', cat:'food',      rar:'rc',qty:2},
-    {id:'ration',    name:'Travel Ration',icon:'🍖',cat:'food',      rar:'rc',qty:3},
-  ],
-  equip:{weapon:'basic_tool'},invTab:'all',
-  currentKingdom:'none',questFilter:'active'
-};
-
-function gainXP(amt){player.xp+=amt;if(player.xp>=player.maxXp){player.level++;player.xp-=player.maxXp;player.maxXp=Math.floor(player.maxXp*1.5);addToast(`🎉 Level Up! Now Level ${player.level}!`);}updateHUDBars();}
-function addItem(item){const ex=player.inv.find(i=>i.id===item.id);if(ex){ex.qty=(ex.qty||1)+(item.qty||1);}else{player.inv.push({...item});}if(document.getElementById('inv-modal').style.display==='flex')renderInv();}
-
-// ════════════════════════════════════════════════════════════════════
-//  CRAFTING SYSTEM
-// ════════════════════════════════════════════════════════════════════
-const RECIPES={
-  tools:[
-    {id:'r_axe',    name:'Iron Axe',     icon:'🪓',cat:'tools',   req:{iron:2,wood:3},   result:{id:'iron_axe',name:'Iron Axe',icon:'🪓',cat:'weapons',rar:'ri',qty:1}},
-    {id:'r_pick',   name:'Iron Pickaxe', icon:'⛏️', cat:'tools',   req:{iron:3,wood:2},   result:{id:'iron_pick',name:'Iron Pickaxe',icon:'⛏️',cat:'weapons',rar:'ri',qty:1}},
-  ],
-  weapons:[
-    {id:'r_sword',  name:'Iron Sword',   icon:'⚔️', cat:'weapons', req:{iron:4,wood:1},   result:{id:'iron_sword',name:'Iron Sword',icon:'⚔️',cat:'weapons',rar:'ri',qty:1}},
-    {id:'r_bow',    name:'Hunter Bow',   icon:'🏹', cat:'weapons', req:{wood:6,herb:2},   result:{id:'bow',name:'Hunter Bow',icon:'🏹',cat:'weapons',rar:'ri',qty:1}},
-    {id:'r_staff',  name:'Magic Staff',  icon:'🪄', cat:'weapons', req:{wood:4,crystal:2},result:{id:'staff',name:'Magic Staff',icon:'🪄',cat:'weapons',rar:'re',qty:1}},
-  ],
-  armor:[
-    {id:'r_larmor', name:'Leather Armor',icon:'🥋', cat:'armor',   req:{herb:5,wood:3},   result:{id:'l_armor',name:'Leather Armor',icon:'🥋',cat:'armor',rar:'rc',qty:1}},
-    {id:'r_iarmor', name:'Iron Armor',   icon:'🛡️', cat:'armor',   req:{iron:6,wood:2},   result:{id:'i_armor',name:'Iron Armor',icon:'🛡️',cat:'armor',rar:'ri',qty:1}},
-  ],
-  camp:[
-    {id:'r_fire',   name:'Campfire',     icon:'🔥', cat:'camp',    req:{wood:5,stone:3},  result:{id:'campfire',name:'Campfire',icon:'🔥',cat:'camp',rar:'rc',qty:1}},
-    {id:'r_bed',    name:'Bedroll',      icon:'🛏️', cat:'camp',    req:{herb:4,wood:3},   result:{id:'bedroll',name:'Bedroll',icon:'🛏️',cat:'camp',rar:'rc',qty:1}},
-    {id:'r_chest',  name:'Storage Chest',icon:'📦', cat:'camp',    req:{wood:8,iron:2},   result:{id:'chest',name:'Storage Chest',icon:'📦',cat:'camp',rar:'rc',qty:1}},
-    {id:'r_pot',    name:'Cooking Pot',  icon:'🍲', cat:'camp',    req:{iron:4,stone:2},  result:{id:'cook_pot',name:'Cooking Pot',icon:'🍲',cat:'camp',rar:'ri',qty:1}},
-  ],
-  cooking:[
-    {id:'r_meal',   name:'Cooked Meal',  icon:'🍗', cat:'cooking', req:{ration:2},        result:{id:'cooked_meal',name:'Cooked Meal',icon:'🍗',cat:'food',rar:'rc',qty:2}},
-    {id:'r_fish',   name:'Grilled Fish', icon:'🐟', cat:'cooking', req:{fish:3,wood:1},   result:{id:'grilled_fish',name:'Grilled Fish',icon:'🐟',cat:'food',rar:'rc',qty:2}},
-  ],
-  potions:[
-    {id:'r_hpot',   name:'Health Potion',icon:'🧪', cat:'potions', req:{herb:3,water_f:1},result:{id:'hpot',name:'Health Potion',icon:'🧪',cat:'potions',rar:'ri',qty:1}},
-    {id:'r_spot',   name:'Stamina Brew', icon:'⚗️', cat:'potions', req:{herb:2,crystal:1},result:{id:'spot',name:'Stamina Brew',icon:'⚗️',cat:'potions',rar:'ri',qty:1}},
+    {id:'basic_sword',name:'Iron Sword',icon:'⚔️',cat:'weapons',rar:'ri',qty:1},
+    {id:'water_f',name:'Water Flask',icon:'💧',cat:'food',rar:'rc',qty:2},
+    {id:'ration',name:'Travel Ration',icon:'🍖',cat:'food',rar:'rc',qty:3},
   ]
 };
-let currentCraftCat='tools';
-function hasItems(req){return Object.entries(req).every(([id,qty])=>{const it=player.inv.find(i=>i.id===id);return it&&it.qty>=qty;});}
-function consumeItems(req){Object.entries(req).forEach(([id,qty])=>{const it=player.inv.find(i=>i.id===id);if(it)it.qty-=qty;});player.inv=player.inv.filter(i=>i.qty>0);}
-function craftItem(recipeId){let recipe=null;Object.values(RECIPES).flat().forEach(r=>{if(r.id===recipeId)recipe=r;});if(!recipe)return;if(!hasItems(recipe.req)){addToast('Not enough materials!');return;}consumeItems(recipe.req);addItem(recipe.result);addToast(`Crafted: ${recipe.icon} ${recipe.name}`);gainXP(30);renderCraft();}
+function gainXP(amt){player.xp+=amt;if(player.xp>=player.maxXp){player.level++;player.xp-=player.maxXp;player.maxXp=Math.floor(player.maxXp*1.5);addNotif(`🎉 Level Up! Now Level ${player.level}!`,'levelup');earnMoney(0,5);}updateHUDBars();}
+function addItem(item){const ex=player.inv.find(i=>i.id===item.id);if(ex){ex.qty=(ex.qty||1)+(item.qty||1);}else{player.inv.push({...item});}if(document.getElementById('inv-modal').style.display==='flex')renderInv();}
 
-// ════════════════════════════════════════════════════════════════════
-//  CAMP SYSTEM
-// ════════════════════════════════════════════════════════════════════
+// ── CRAFTING ──
+const RECIPES={
+  tools:[{id:'r_axe',name:'Iron Axe',icon:'🪓',req:{iron:2,wood:3},result:{id:'iron_axe',name:'Iron Axe',icon:'🪓',cat:'weapons',rar:'ri',qty:1}},{id:'r_pick',name:'Iron Pickaxe',icon:'⛏️',req:{iron:3,wood:2},result:{id:'iron_pick',name:'Pickaxe',icon:'⛏️',cat:'weapons',rar:'ri',qty:1}}],
+  weapons:[{id:'r_sword',name:'Iron Sword',icon:'⚔️',req:{iron:4,wood:1},result:{id:'iron_sword2',name:'Iron Sword',icon:'⚔️',cat:'weapons',rar:'ri',qty:1}},{id:'r_bow',name:'Hunter Bow',icon:'🏹',req:{wood:6,herb:2},result:{id:'bow',name:'Hunter Bow',icon:'🏹',cat:'weapons',rar:'ri',qty:1}}],
+  armor:[{id:'r_larmor',name:'Leather Armor',icon:'🥋',req:{herb:5,wood:3},result:{id:'l_armor2',name:'Leather Armor',icon:'🥋',cat:'armor',rar:'rc',qty:1}},{id:'r_iarmor',name:'Iron Armor',icon:'🛡️',req:{iron:6,wood:2},result:{id:'i_armor',name:'Iron Armor',icon:'🛡️',cat:'armor',rar:'ri',qty:1}}],
+  camp:[{id:'r_fire',name:'Campfire',icon:'🔥',req:{wood:5,stone:3},result:{id:'campfire',name:'Campfire',icon:'🔥',cat:'camp',rar:'rc',qty:1}},{id:'r_bed',name:'Bedroll',icon:'🛏️',req:{herb:4,wood:3},result:{id:'bedroll',name:'Bedroll',icon:'🛏️',cat:'camp',rar:'rc',qty:1}}],
+  cooking:[{id:'r_meal',name:'Cooked Meal',icon:'🍗',req:{ration:2},result:{id:'cooked_meal2',name:'Cooked Meal',icon:'🍗',cat:'food',rar:'rc',qty:2}}],
+  potions:[{id:'r_hpot',name:'Health Potion',icon:'🧪',req:{herb:3,water_f:1},result:{id:'hpot',name:'Health Potion',icon:'🧪',cat:'potions',rar:'ri',qty:1}}]
+};
+let currentCraftCat='tools';
+function hasItems(req){return Object.entries(req).every(([id,qty])=>{const it=player.inv.find(i=>i.id===id);return it&&(it.qty||1)>=qty;});}
+function consumeItems(req){Object.entries(req).forEach(([id,qty])=>{const it=player.inv.find(i=>i.id===id);if(it)it.qty-=qty;});player.inv=player.inv.filter(i=>(i.qty||1)>0);}
+function craftItem(recipeId){let recipe=null;Object.values(RECIPES).flat().forEach(r=>{if(r.id===recipeId)recipe=r;});if(!recipe)return;if(!hasItems(recipe.req)){addNotif('Not enough materials!','');return;}consumeItems(recipe.req);addItem(recipe.result);addNotif(`Crafted: ${recipe.result.icon} ${recipe.name}`,'');gainXP(30);renderCraft();}
+
+// ── CAMP ──
 const CAMP_ACTIONS=[
-  {icon:'🔥',name:'Light Campfire',desc:'Warms you and cooks food.',action:()=>{survival.temperature=20;addToast('Campfire lit — warm and safe.');}},
-  {icon:'🛏️',name:'Sleep (Bedroll)',desc:'Restores stamina, HP, and sleep.',action:()=>{sleep();}},
-  {icon:'🍲',name:'Cook Meal',desc:'Turn raw food into cooked food (+hunger restore).',action:()=>{if(hasItems({ration:1})){consumeItems({ration:1});addItem({id:'cooked_meal',name:'Cooked Meal',icon:'🍗',cat:'food',rar:'rc',qty:1});addToast('Cooked a meal!');}else{addToast('Need a Ration to cook.');}}},
-  {icon:'💧',name:'Drink Water',desc:'Restores 40 thirst.',action:()=>{drinkWater(40);}},
-  {icon:'🍖',name:'Eat Ration',desc:'Restores 25 hunger, 10 HP.',action:()=>{if(hasItems({ration:1})){consumeItems({ration:1});eatFood('Ration',25,10);}else{addToast('No rations left.');}}},
+  {icon:'🔥',name:'Light Campfire',desc:'Warms you.',action:()=>{survival.temperature=20;addNotif('Campfire lit — warm and safe.');}},
+  {icon:'🛏️',name:'Sleep',desc:'Restores HP +30, stamina full.',action:()=>{player.hp=Math.min(player.maxHp,player.hp+30);player.sta=player.maxSta;addNotif('Slept well — HP +30, stamina restored.');}},
+  {icon:'🍲',name:'Cook Meal',desc:'Turn rations into hot food.',action:()=>{if(hasItems({ration:1})){consumeItems({ration:1});addItem({id:'cooked_meal',name:'Cooked Meal',icon:'🍗',cat:'food',rar:'rc',qty:1});addNotif('Cooked a meal!');}else addNotif('Need a Ration to cook.');}},
+  {icon:'💧',name:'Drink Water',desc:'Thirst +40.',action:()=>{survival.thirst=Math.min(survival.maxThirst,survival.thirst+40);addNotif('Drank water.');}},
+  {icon:'🍖',name:'Eat Ration',desc:'Hunger +25, HP +10.',action:()=>{if(hasItems({ration:1})){consumeItems({ration:1});survival.hunger=Math.min(survival.maxHunger,survival.hunger+25);player.hp=Math.min(player.maxHp,player.hp+10);addNotif('Ate ration. Hunger +25, HP +10.');}else addNotif('No rations.');}},
 ];
 
-// ════════════════════════════════════════════════════════════════════
-//  MODAL SYSTEM
-// ════════════════════════════════════════════════════════════════════
-function openModal(id){document.getElementById(id).style.display='flex';if(mlocked)document.exitPointerLock();renderModal(id);}
-function closeModal(id){document.getElementById(id).style.display='none';}
-function closeAllModals(){document.querySelectorAll('.modal').forEach(m=>m.style.display='none');}
-function renderModal(id){
-  if(id==='inv-modal')renderInv();
-  else if(id==='quest-modal')renderQuests();
-  else if(id==='god-modal')renderGods();
-  else if(id==='kingdom-modal')renderKingdoms();
-  else if(id==='craft-modal')renderCraft();
-  else if(id==='camp-modal')renderCamp();
+// ── LOCAL SAVE / LOAD ──
+function getSaveData(){
+  return JSON.stringify({
+    player:{hp:player.hp,sta:player.sta,xp:player.xp,maxXp:player.maxXp,level:player.level,chosenGod:player.chosenGod,equip:player.equip,inv:player.inv},
+    wallet,survival,worldT,
+    kingdoms:Object.fromEntries(Object.entries(KINGDOMS).map(([k,v])=>([k,{rep:v.rep,atWarWith:v.atWarWith}]))),
+    activeQuestIds:activeQuests.map(q=>q.id),
+    completedQuestIds:QUEST_POOL.filter(q=>q.done).map(q=>q.id),
+    ppos:{x:ppos.x,y:ppos.y,z:ppos.z},
+    camYaw,camPitch,
+    ts:Date.now()
+  });
 }
-// Inventory
+function saveGame(){
+  try{localStorage.setItem('kotfg_save',getSaveData());addNotif('💾 Game saved locally!','discovery');}
+  catch(e){addNotif('Save failed: '+e.message,'');}
+}
+function loadGame(){
+  try{
+    const raw=localStorage.getItem('kotfg_save');
+    if(!raw){addNotif('No save found.','');return;}
+    const d=JSON.parse(raw);
+    Object.assign(player,d.player);
+    Object.assign(wallet,d.wallet||{gold:0,silver:10,emerald:0});
+    Object.assign(survival,d.survival||{});
+    if(d.worldT)worldT=d.worldT;
+    if(d.kingdoms){Object.entries(d.kingdoms).forEach(([k,v])=>{if(KINGDOMS[k]){KINGDOMS[k].rep=v.rep||0;KINGDOMS[k].atWarWith=v.atWarWith||[];}});}
+    if(d.activeQuestIds){activeQuests=QUEST_POOL.filter(q=>d.activeQuestIds.includes(q.id));activeQuests.forEach(q=>q.accepted=true);}
+    if(d.completedQuestIds){d.completedQuestIds.forEach(id=>{const q=QUEST_POOL.find(q=>q.id===id);if(q)q.done=true;});}
+    if(d.ppos){ppos.set(d.ppos.x,d.ppos.y,d.ppos.z);}
+    if(d.camYaw!=null)camYaw=d.camYaw;
+    if(d.camPitch!=null)camPitch=d.camPitch;
+    updateHUDBars();updateMoneyHUD();updateQuestTracker();updateRepHUD();
+    addNotif('📂 Game loaded!','discovery');
+  }catch(e){addNotif('Load failed: '+e.message,'');}
+}
+function autoSave(){try{localStorage.setItem('kotfg_autosave',getSaveData());}catch(e){}}
+// ── MODAL SYSTEM ──
+function openModal(id){const el=document.getElementById(id);if(!el)return;el.style.display='flex';if(mlocked)document.exitPointerLock();renderModal(id);}
+function closeModal(id){const el=document.getElementById(id);if(el)el.style.display='none';}
+function closeAllModals(){document.querySelectorAll('.modal').forEach(m=>m.style.display='none');}
+function renderModal(id){if(id==='inv-modal')renderInv();else if(id==='quest-modal')renderQuests();else if(id==='god-modal')renderGods();else if(id==='kingdom-modal')renderKingdoms();else if(id==='craft-modal')renderCraft();else if(id==='camp-modal')renderCamp();}
+
+// ── INVENTORY ──
 let invCat='all';
 function invTab(el,cat){document.querySelectorAll('#inv-modal .mtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');invCat=cat;renderInv();}
-function renderInv(){const items=invCat==='all'?player.inv:player.inv.filter(i=>i.cat===invCat);document.getElementById('inv-grid').innerHTML=items.length?items.map(it=>`<div class="isl ${it.rar}${player.equip.weapon===it.id?' eq':''}" onclick="useItem('${it.id}')"><div class="ico">${it.icon}</div><div class="nm">${it.name}</div>${(it.qty||1)>1?`<div class="qty">×${it.qty}</div>`:''}</div>`).join(''):'<div style="color:rgba(255,255,255,0.25);font-size:11px;padding:20px;text-align:center;">Empty</div>';}
-function useItem(id){const it=player.inv.find(i=>i.id===id);if(!it)return;if(it.cat==='weapons')player.equip.weapon=id;else if(it.cat==='food'){eatFood(it.name,25,10);it.qty--;if(it.qty<=0)player.inv=player.inv.filter(i=>i.id!==id);}else if(it.cat==='potions'){player.hp=Math.min(player.maxHp,player.hp+40);addToast(`Used ${it.name}: +40 HP`);it.qty--;if(it.qty<=0)player.inv=player.inv.filter(i=>i.id!==id);}renderInv();updateHUDBars();}
-// Quests
+function renderInv(){const items=invCat==='all'?player.inv:player.inv.filter(i=>i.cat===invCat);document.getElementById('inv-grid').innerHTML=items.length?items.map(it=>`<div class="isl ${it.rar||'rc'}${player.equip.weapon===it.id?' eq':''}" onclick="useItem('${it.id}')"><div class="ico">${it.icon}</div><div class="nm">${it.name}</div>${(it.qty||1)>1?`<div class="qty">×${it.qty}</div>`:''}</div>`).join(''):`<div style="color:rgba(255,255,255,0.22);font-size:11px;padding:20px;text-align:center;">Empty</div>`;}
+function useItem(id){const it=player.inv.find(i=>i.id===id);if(!it)return;if(it.cat==='weapons'){player.equip.weapon=id;addNotif(`Equipped: ${it.name}`);}else if(it.cat==='food'){survival.hunger=Math.min(survival.maxHunger,survival.hunger+25);player.hp=Math.min(player.maxHp,player.hp+10);addNotif(`Ate ${it.name}. Hunger +25, HP +10.`);it.qty--;if((it.qty||0)<=0)player.inv=player.inv.filter(i=>i.id!==id);}else if(it.cat==='potions'){player.hp=Math.min(player.maxHp,player.hp+40);addNotif(`Used ${it.name}: HP +40`);it.qty--;if((it.qty||0)<=0)player.inv=player.inv.filter(i=>i.id!==id);}renderInv();updateHUDBars();}
+
+// ── QUESTS ──
 function questTab(el,cat){document.querySelectorAll('#quest-modal .mtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');currentQuestFilter=cat;renderQuests();}
-function renderQuests(){const pool=currentQuestFilter==='done'?QUEST_POOL.filter(q=>q.done):currentQuestFilter==='active'?activeQuests:QUEST_POOL.filter(q=>q.type===currentQuestFilter&&!q.done);document.getElementById('quest-list').innerHTML=pool.length?pool.map(q=>`<div class="qcard${q.done?' done':''}"><div class="qtitle">${q.title}</div><div class="qdesc">${q.desc}</div><span class="qtag ${q.tag}">${q.type.toUpperCase()}</span><div class="qrew">Reward: ${q.reward}</div>${!q.accepted&&!q.done?`<button class="craft-btn" style="margin-top:7px" onclick="acceptQuest('${q.id}')">Accept</button>`:''}${q.accepted&&!q.done?`<button class="craft-btn" style="margin-top:7px;background:rgba(46,204,113,0.2);border-color:#2ecc71;color:#2ecc71" onclick="completeQuest('${q.id}')">Mark Complete</button>`:''}</div>`).join(''):'<div style="color:rgba(255,255,255,0.22);font-size:11px;padding:20px;text-align:center;">No quests here.</div>';}
-// Gods
-function renderGods(){document.getElementById('god-list').innerHTML=Object.values(GODS).map(g=>`<div class="gcard${player.chosenGod===g.id?' chosen':''}" onclick="chooseGod('${g.id}')"><div class="gico">${g.icon}</div><div class="ginf"><div class="gname" style="color:${g.col}">${g.name}</div><div class="gdesc">${g.desc}</div><div class="gpow">${g.powers.map(p=>`<span class="gpill">${p}</span>`).join('')}</div><div style="margin-top:7px;font-size:8px;color:rgba(255,255,255,0.3)">Potions: ${g.potions.map(p=>`${p.icon}${p.name}`).join(' · ')}</div></div>${player.chosenGod===g.id?'<span style="color:#f39c12;font-size:10px;font-weight:700">CHOSEN</span>':''}</div>`).join('');}
-function chooseGod(id){if(player.chosenGod){addToast('Your covenant is sealed. You cannot change gods.');return;}player.chosenGod=id;const g=GODS[id];addItem({id:`${id}_potion_l1`,name:g.potions[0].name,icon:g.potions[0].icon,cat:'potions',rar:'ri',qty:2});document.getElementById('g-nm').textContent=`${g.icon} ${g.name}`;document.getElementById('g-nm').style.color=g.col;addToast(`⚡ Divine Covenant: ${g.name}`);gainXP(200);renderGods();}
-// Kingdoms
+function renderQuests(){const pool=currentQuestFilter==='done'?QUEST_POOL.filter(q=>q.done):currentQuestFilter==='active'?activeQuests:QUEST_POOL.filter(q=>q.type===currentQuestFilter&&!q.done);document.getElementById('quest-list').innerHTML=pool.length?pool.map(q=>`<div class="qcard${q.done?' done':''}"><div class="qtitle">${q.title}</div><div class="qdesc">${q.desc}</div><span class="qtag ${q.tag}">${q.type.toUpperCase()}</span><div class="qrew">Reward: ${q.reward}</div>${!q.accepted&&!q.done?`<button class="craft-btn" style="margin-top:7px" onclick="acceptQuest('${q.id}')">Accept</button>`:''}${q.accepted&&!q.done?`<button class="craft-btn" style="margin-top:7px;background:rgba(46,204,113,0.2);border-color:#2ecc71;color:#2ecc71" onclick="completeQuest('${q.id}')">Mark Complete</button>`:''}</div>`).join(''):`<div style="color:rgba(255,255,255,0.22);font-size:11px;padding:20px;text-align:center;">No quests here.</div>`;}
+
+// ── GODS ──
+function renderGods(){document.getElementById('god-list').innerHTML=Object.values(GODS).map(g=>`<div class="gcard${player.chosenGod===g.id?' chosen':''}" onclick="chooseGod('${g.id}')"><div class="gico">${g.icon}</div><div class="ginf"><div class="gname" style="color:${g.col}">${g.name}</div><div class="gdesc">${g.desc}</div><div class="gpow">${g.powers.map(p=>`<span class="gpill">${p}</span>`).join('')}</div><div style="margin-top:6px;font-size:8px;color:rgba(255,255,255,0.3)">Potions: ${g.potions.map(p=>`${p.icon} ${p.name}`).join(' · ')}</div></div>${player.chosenGod===g.id?'<span style="color:#f39c12;font-size:10px;font-weight:700">CHOSEN</span>':''}</div>`).join('');}
+function chooseGod(id){if(player.chosenGod){addNotif('Your covenant is sealed. You cannot change gods.','');return;}player.chosenGod=id;const g=GODS[id];addItem({id:`${id}_pot_l1`,name:g.potions[0].name,icon:g.potions[0].icon,cat:'potions',rar:'ri',qty:2});document.getElementById('g-nm').textContent=`${g.icon} ${g.name}`;document.getElementById('g-nm').style.color=g.col;addNotif(`⚡ Divine Covenant: ${g.name}`,'levelup');gainXP(200);renderGods();}
+
+// ── KINGDOMS ──
 let kTabFilter='overview';
 function kTab(el,cat){document.querySelectorAll('#kingdom-modal .mtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');kTabFilter=cat;renderKingdoms();}
-function renderKingdoms(){const el=document.getElementById('kingdom-list');if(kTabFilter==='overview'){el.innerHTML=Object.values(KINGDOMS).map(k=>`<div class="kcard"><div class="kname" style="color:${k.col}">${k.icon} ${k.name}</div><div class="kstat">Terrain: ${k.terrain}<br>Resources: ${k.resources}<br>Structures: ${k.structures}<br>Army: ${k.military}k · Pop: ${k.pop.toLocaleString()} · Economy: ${k.economy}%<br>Boss: ⚔️ ${k.boss}</div><div class="repbar"><div class="repfill" style="width:${(k.rep+100)/2}%;background:${repColor(k.id)}"></div></div><div style="font-size:8px;color:${repColor(k.id)};margin-top:3px">${repLabel(k.id)}</div><div style="margin-top:6px;display:flex;gap:6px"><button class="craft-btn" onclick="gainRep('${k.id}',10)">Offer Aid (+10 rep)</button><button class="craft-btn" style="background:rgba(231,76,60,0.15);border-color:#e74c3c;color:#e74c3c" onclick="loseRep('${k.id}',5)">Provoke (-5 rep)</button></div></div>`).join('');}else if(kTabFilter==='relations'){el.innerHTML='<div class="kstat" style="padding:8px;color:rgba(255,255,255,0.5);font-size:10px;line-height:2">'+Object.values(KINGDOMS).map(k=>`${k.icon} ${k.name}: at war with ${k.atWarWith.length?k.atWarWith.map(w=>KINGDOMS[w]?.icon+' '+KINGDOMS[w]?.name).join(', '):'nobody'}`).join('<br>')+'</div>';}else{el.innerHTML='<div style="padding:12px"><div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:10px">Declare or end wars between kingdoms:</div>'+Object.values(KINGDOMS).map(k=>`<div class="kcard"><div class="kname" style="color:${k.col}">${k.icon} ${k.name}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${Object.values(KINGDOMS).filter(k2=>k2.id!==k.id).map(k2=>`<button class="craft-btn" onclick="declareWar('${k.id}','${k2.id}')" style="${k.atWarWith.includes(k2.id)?'background:rgba(231,76,60,0.2);border-color:#e74c3c;color:#e74c3c':''}">⚔️ vs ${k2.icon}</button>`).join('')}</div></div>`).join('')+'</div>';}}
-function declareWar(k1,k2){if(KINGDOMS[k1].atWarWith.includes(k2)){KINGDOMS[k1].atWarWith=KINGDOMS[k1].atWarWith.filter(k=>k!==k2);KINGDOMS[k2].atWarWith=KINGDOMS[k2].atWarWith.filter(k=>k!==k1);addToast(`Peace declared: ${KINGDOMS[k1].name} & ${KINGDOMS[k2].name}`);}else{KINGDOMS[k1].atWarWith.push(k2);KINGDOMS[k2].atWarWith.push(k1);addToast(`⚔️ War: ${KINGDOMS[k1].name} vs ${KINGDOMS[k2].name}`);}renderKingdoms();}
-// Crafting
+function renderKingdoms(){const el=document.getElementById('kingdom-list');if(kTabFilter==='overview'){el.innerHTML=Object.values(KINGDOMS).map(k=>`<div class="kcard"><div class="kname" style="color:${k.col}">${k.icon} ${k.name}</div><div class="kstat">Terrain: ${k.terrain}<br>Resources: ${k.resources}<br>Structures: ${k.structures}<br>Army: ${k.military}k · Pop: ${k.pop.toLocaleString()} · Economy: ${k.economy}%</div><div class="repbar"><div class="repfill" style="width:${(k.rep+100)/2}%;background:${repColor(k.id)}"></div></div><div style="font-size:8px;color:${repColor(k.id)};margin-top:3px">${repLabel(k.id)}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="craft-btn" onclick="gainRep('${k.id}',10)">Offer Aid (+10)</button><button class="craft-btn" style="background:rgba(231,76,60,0.15);border-color:#e74c3c;color:#e74c3c" onclick="loseRep('${k.id}',5)">Provoke (-5)</button></div></div>`).join('');}else if(kTabFilter==='relations'){el.innerHTML='<div style="padding:10px"><div style="font-size:10px;color:rgba(255,255,255,0.4);line-height:2.2">'+Object.values(KINGDOMS).map(k=>`${k.icon} <b style="color:${k.col}">${k.name}</b>: ${k.atWarWith.length?'⚔️ At war with '+k.atWarWith.map(w=>KINGDOMS[w]?.name).join(', '):'Peace'}`).join('<br>')+'</div></div>';}else{el.innerHTML='<div style="padding:12px">'+Object.values(KINGDOMS).map(k=>`<div class="kcard"><div class="kname" style="color:${k.col}">${k.icon} ${k.name}</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${Object.values(KINGDOMS).filter(k2=>k2.id!==k.id).map(k2=>`<button class="craft-btn" onclick="declareWar('${k.id}','${k2.id}')" style="${k.atWarWith.includes(k2.id)?'background:rgba(231,76,60,0.2);border-color:#e74c3c;color:#e74c3c':''}">⚔️ vs ${k2.icon}</button>`).join('')}</div></div>`).join('')+'</div>';}}
+function declareWar(k1,k2){if(KINGDOMS[k1].atWarWith.includes(k2)){KINGDOMS[k1].atWarWith=KINGDOMS[k1].atWarWith.filter(k=>k!==k2);KINGDOMS[k2].atWarWith=KINGDOMS[k2].atWarWith.filter(k=>k!==k1);addNotif(`Peace: ${KINGDOMS[k1].name} & ${KINGDOMS[k2].name}`);}else{KINGDOMS[k1].atWarWith.push(k2);KINGDOMS[k2].atWarWith.push(k1);addNotif(`⚔️ War: ${KINGDOMS[k1].name} vs ${KINGDOMS[k2].name}`);}renderKingdoms();}
+
+// ── CRAFTING RENDER ──
 function craftTab(el,cat){document.querySelectorAll('#craft-modal .mtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');currentCraftCat=cat;renderCraft();}
-function renderCraft(){const recipes=RECIPES[currentCraftCat]||[];document.getElementById('craft-list').innerHTML=recipes.map(r=>{const canCraft=hasItems(r.req);const reqStr=Object.entries(r.req).map(([id,qty])=>{const it=player.inv.find(i=>i.id===id);const have=it?it.qty:0;return`${id.replace('_',' ')} ${have}/${qty}`;}).join(' · ');return`<div class="craft-row"><div class="craft-ico">${r.result.icon}</div><div class="craft-inf"><div class="craft-nm">${r.name}</div><div class="craft-req">Requires: ${reqStr}</div></div><button class="craft-btn" onclick="craftItem('${r.id}')" ${canCraft?'':'disabled style="opacity:0.4"'}>Craft</button></div>`;}).join('');}
-// Camp
+function renderCraft(){const recipes=RECIPES[currentCraftCat]||[];document.getElementById('craft-list').innerHTML=recipes.map(r=>{const canCraft=hasItems(r.req);const reqStr=Object.entries(r.req).map(([id,qty])=>{const it=player.inv.find(i=>i.id===id);const have=it?(it.qty||1):0;return`${id.replace(/_/g,' ')} ${have}/${qty}`;}).join(' · ');return`<div class="craft-row"><div class="craft-ico">${r.result.icon}</div><div class="craft-inf"><div class="craft-nm">${r.name}</div><div class="craft-req">Needs: ${reqStr}</div></div><button class="craft-btn" onclick="craftItem('${r.id}')" ${canCraft?'':'disabled style="opacity:0.4"'}>Craft</button></div>`;}).join('');}
+
+// ── CAMP RENDER ──
 function renderCamp(){document.getElementById('camp-list').innerHTML=CAMP_ACTIONS.map((a,i)=>`<div class="camp-row" onclick="doCampAction(${i})"><div class="craft-ico">${a.icon}</div><div class="craft-inf"><div class="craft-nm">${a.name}</div><div class="craft-req">${a.desc}</div></div></div>`).join('');}
 function doCampAction(i){CAMP_ACTIONS[i].action();}
 
-// ════════════════════════════════════════════════════════════════════
-//  HUD UPDATE
-// ════════════════════════════════════════════════════════════════════
+// ── HUD BARS ──
 function updateHUDBars(){document.getElementById('hpb').style.width=(player.hp/player.maxHp*100)+'%';document.getElementById('stb').style.width=(player.sta/player.maxSta*100)+'%';document.getElementById('hgb').style.width=(survival.hunger/survival.maxHunger*100)+'%';document.getElementById('thb').style.width=(survival.thirst/survival.maxThirst*100)+'%';document.getElementById('xpb').style.width=(player.xp/player.maxXp*100)+'%';}
 
-// ════════════════════════════════════════════════════════════════════
-//  TOAST NOTIFICATION
-// ════════════════════════════════════════════════════════════════════
-let toastTimer=null;
-function addToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',3200);}
+// ── NOTIFICATIONS ──
+function addNotif(msg,type=''){const stack=document.getElementById('notif-stack');if(!stack)return;const el=document.createElement('div');el.className='notif'+(type?' '+type:'');el.textContent=msg;stack.appendChild(el);setTimeout(()=>{el.style.transition='opacity 0.4s';el.style.opacity='0';setTimeout(()=>el.remove(),400);},3200);}
 
-// ════════════════════════════════════════════════════════════════════
-//  INTERACTION
-// ════════════════════════════════════════════════════════════════════
-function tryInteract(){if(dlgOpen){closeDlg();return;}if(nearNPC){showDialogue(nearNPC);return;}// Generic interact
-addToast('Nothing nearby to interact with.');}
-function doJump(){pJumpBuf=0.22;}
-function startSprint(){player.sprinting=true;}
+// ── SIDE MENU ──
+let menuOpen=false;
+function toggleMenu(){menuOpen?closeMenu():openMenu();}
+function openMenu(){menuOpen=true;document.getElementById('side-menu').classList.add('open');document.getElementById('mbk').classList.add('show');}
+function closeMenu(){menuOpen=false;document.getElementById('side-menu').classList.remove('open');document.getElementById('mbk').classList.remove('show');}
+
+// ── WORLD MAP (fixed close button) ──
+function openWorldMap(){const el=document.getElementById('wmo');el.style.display='flex';renderWorldMap();}
+function closeWorldMap(){document.getElementById('wmo').style.display='none';}
+function renderWorldMap(){
+  const c=document.getElementById('wmc');const wrap=document.getElementById('wmc-wrap');
+  const size=Math.min(wrap.clientWidth||400,550);c.width=size;c.height=size;
+  const ctx=c.getContext('2d');const range=600;
+  ctx.fillStyle='#060a12';ctx.fillRect(0,0,size,size);
+  const step=8;
+  for(let px=0;px<size;px+=step){for(let pz=0;pz<size;pz+=step){const wx=(px/size-0.5)*range*2,wz=(pz/size-0.5)*range*2;const k=getKingdom(wx,wz);const cols={sun:'rgba(243,156,18,0.25)',water:'rgba(52,152,219,0.25)',forest:'rgba(46,204,113,0.22)',tech:'rgba(155,89,182,0.22)'};ctx.fillStyle=cols[k];ctx.fillRect(px,pz,step,step);}}
+  ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;for(let i=0;i<=size;i+=size/8){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,size);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(size,i);ctx.stroke();}
+  // Villages
+  villages.forEach(v=>{const px=(v.cx/range+0.5)*size,pz=(v.cz/range+0.5)*size;if(px<2||px>size-2||pz<2||pz>size-2)return;ctx.beginPath();ctx.arc(px,pz,4,0,Math.PI*2);ctx.fillStyle='#aaa';ctx.fill();ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='7px monospace';ctx.fillText(v.name,px+6,pz+3);});
+  // Kingdom capitals
+  Object.values(KINGDOMS).forEach(k=>{const px=(k.capitalX/range+0.5)*size,pz=(k.capitalZ/range+0.5)*size;if(px<0||px>size||pz<0||pz>size)return;ctx.beginPath();ctx.arc(px,pz,6,0,Math.PI*2);ctx.fillStyle=k.col;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();ctx.fillStyle='rgba(255,255,255,0.82)';ctx.font='8px monospace';ctx.fillText(k.icon+' '+k.name.split(' ').pop(),px+9,pz+3);});
+  // Player
+  const ppx=(ppos.x/range+0.5)*size,ppz=(ppos.z/range+0.5)*size;
+  if(ppx>=0&&ppx<=size&&ppz>=0&&ppz<=size){ctx.beginPath();ctx.arc(ppx,ppz,5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.beginPath();ctx.arc(ppx,ppz,9,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.4)';ctx.lineWidth=1.5;ctx.stroke();}
+  ctx.fillStyle='rgba(77,217,255,0.8)';ctx.font='bold 10px monospace';ctx.fillText('N',size/2-4,13);ctx.fillText('S',size/2-4,size-3);ctx.fillText('W',4,size/2+4);ctx.fillText('E',size-12,size/2+4);
+}
+
+// ── MINIMAP ──
+const mmCanvas=document.getElementById('mm-canvas');const mmCtx=mmCanvas.getContext('2d');const MM_RANGE=120;
+function renderMinimap(){
+  const s=110;mmCtx.clearRect(0,0,s,s);
+  mmCtx.save();mmCtx.beginPath();mmCtx.arc(s/2,s/2,s/2,0,Math.PI*2);mmCtx.clip();
+  mmCtx.fillStyle='rgba(4,8,18,0.88)';mmCtx.fillRect(0,0,s,s);
+  const step=4;
+  for(let px=0;px<s;px+=step){for(let py=0;py<s;py+=step){
+    const wx=ppos.x+(px-s/2)*(MM_RANGE/s)*2,wz=ppos.z+(py-s/2)*(MM_RANGE/s)*2;
+    const k=getKingdom(wx,wz);const biome=getBiome(wx,wz);
+    let col=k==='sun'?'rgba(243,156,18,0.28)':k==='water'?'rgba(52,152,219,0.26)':k==='forest'?'rgba(46,204,113,0.26)':'rgba(155,89,182,0.23)';
+    if(biome==='mountain')col='rgba(110,100,90,0.32)';
+    mmCtx.fillStyle=col;mmCtx.fillRect(px,py,step,step);
+  }}
+  // Villages on minimap
+  villages.forEach(v=>{const dx=v.cx-ppos.x,dz=v.cz-ppos.z;if(Math.sqrt(dx*dx+dz*dz)>MM_RANGE*1.5)return;const px=s/2+dx*(s/2/MM_RANGE),py=s/2+dz*(s/2/MM_RANGE);if(px<2||px>s-2||py<2||py>s-2)return;mmCtx.beginPath();mmCtx.arc(px,py,3,0,Math.PI*2);mmCtx.fillStyle='#aaa';mmCtx.fill();});
+  // Kingdom capitals
+  Object.values(KINGDOMS).forEach(k=>{const dx=k.capitalX-ppos.x,dz=k.capitalZ-ppos.z;if(Math.sqrt(dx*dx+dz*dz)>MM_RANGE*1.5)return;const px=s/2+dx*(s/2/MM_RANGE),py=s/2+dz*(s/2/MM_RANGE);if(px<2||px>s-2||py<2||py>s-2)return;mmCtx.beginPath();mmCtx.arc(px,py,3,0,Math.PI*2);mmCtx.fillStyle=k.col;mmCtx.fill();});
+  mmCtx.restore();
+  mmCtx.beginPath();mmCtx.arc(s/2,s/2,4,0,Math.PI*2);mmCtx.fillStyle='#fff';mmCtx.fill();
+  mmCtx.strokeStyle='rgba(77,217,255,0.9)';mmCtx.lineWidth=1.5;mmCtx.stroke();
+}
+
+// ── INTERACTION — Talk button appears near NPC ──
+let nearNPC=null;
+function checkNearNPCs(){
+  nearNPC=null;
+  let closest=4.0;
+  for(const nm of npcMeshes){
+    const dx=nm.position.x-ppos.x,dz=nm.position.z-ppos.z;
+    const dist=Math.sqrt(dx*dx+dz*dz);
+    if(dist<closest){closest=dist;nearNPC=nm.userData;}
+  }
+  const ipr=document.getElementById('ipr');
+  if(nearNPC&&!dlgOpen){
+    ipr.style.display='block';
+    ipr.textContent=`💬 Talk to ${nearNPC.name}`;
+  } else if(!dlgOpen){
+    ipr.style.display='none';
+  }
+}
+function tryInteract(){if(dlgOpen){closeDlg();return;}if(nearNPC){showDialogue(nearNPC);}}
+
+function doJump(){if(movementEnabled)pJumpBuf=0.22;}
+function startSprint(){if(movementEnabled)player.sprinting=true;}
 function stopSprint(){player.sprinting=false;}
 
-// ════════════════════════════════════════════════════════════════════
-//  SUITS (unchanged structure)
-// ════════════════════════════════════════════════════════════════════
-const SUITS={basic:{spd:9,jump:JUMP_FORCE,def:1.0,sta:1.0},speed:{spd:16,jump:JUMP_FORCE+2,def:0.7,sta:1.5},heavy:{spd:5,jump:JUMP_FORCE-3,def:2.8,sta:0.55},tech:{spd:10,jump:JUMP_FORCE+1,def:1.3,sta:1.0},fly:{spd:12,jump:JUMP_FORCE+18,def:0.9,sta:1.1}};
+const SUITS={basic:{spd:9,jump:JUMP_FORCE,def:1.0,sta:1.0},speed:{spd:16,jump:JUMP_FORCE+2,def:0.7,sta:1.5},heavy:{spd:5,jump:JUMP_FORCE-3,def:2.8,sta:0.55}};
 
-// ════════════════════════════════════════════════════════════════════
-//  PLAYER MOVEMENT  (unchanged physics)
-// ════════════════════════════════════════════════════════════════════
-function updatePlayer(dt){dt=Math.min(dt,0.05);const suit=SUITS[player.suit]||SUITS.basic;let mx=0,mz=0;if(keys['KeyW']||keys['ArrowUp'])mz-=1;if(keys['KeyS']||keys['ArrowDown'])mz+=1;if(keys['KeyA']||keys['ArrowLeft'])mx-=1;if(keys['KeyD']||keys['ArrowRight'])mx+=1;mx+=JOY.x;mz+=JOY.y;const mlen=Math.sqrt(mx*mx+mz*mz);if(mlen>1){mx/=mlen;mz/=mlen;}const moving=mlen>0.05;const sprint=(isSprinting||player.sprinting)&&player.sta>3&&moving;const spd=suit.spd*(sprint?1.8:1.0);if(sprint)player.sta=Math.max(0,player.sta-26*suit.sta*dt);else player.sta=Math.min(player.maxSta,player.sta+14*suit.sta*dt);const g=probeGround(ppos.x,ppos.z);pGroundY=g.groundY;pSlope=g.slope;const sinY=Math.sin(camYaw),cosY=Math.cos(camYaw);const wx=mx*cosY-mz*sinY,wz=mx*sinY+mz*cosY;const accel=pGround?18:6;const tvx=wx*spd,tvz=wz*spd;if(pGround&&pSlope>5&&pSlope<MAX_SLOPE){const dot=tvx*g.nx+tvz*g.nz;pvel.x+=(tvx-dot*g.nx-pvel.x)*accel*dt;pvel.z+=(tvz-dot*g.nz-pvel.z)*accel*dt;}else{pvel.x+=(tvx-pvel.x)*accel*dt;pvel.z+=(tvz-pvel.z)*accel*dt;}if(!pGround||pvel.y>0)pvel.y+=GRAVITY*(pvel.y<0?FALL_M:1.0)*dt;if(player.suit==='fly'&&(keys['Space']||isSprinting)&&player.sta>1){pvel.y+=58*dt;player.sta=Math.max(0,player.sta-20*dt);}if(pJumpBuf>0)pJumpBuf-=dt;if(pGround)pCoyote=0.16;else pCoyote=Math.max(0,pCoyote-dt);if(pJumpBuf>0&&pCoyote>0){pvel.y=suit.jump;pJumpBuf=0;pCoyote=0;pGround=false;}if(pGround&&pSlope>MAX_SLOPE){pvel.x+=g.nx*6*dt;pvel.z+=g.nz*6*dt;}ppos.x+=pvel.x*dt;ppos.y+=pvel.y*dt;ppos.z+=pvel.z*dt;if(ppos.y<=pGroundY){ppos.y=pGroundY;pvel.y=0;pGround=true;}else if(ppos.y>pGroundY+0.08){pGround=false;}if(pGround&&!moving){pvel.x*=Math.pow(0.1,dt*10);pvel.z*=Math.pow(0.1,dt*10);}
-yawD*=0.78;pitchD*=0.78;camYaw+=yawD;camPitch=Math.max(-1.2,Math.min(0.6,camPitch+pitchD));const tD=sprint?6.2:5.0;camDist+=(tD-camDist)*7*dt;const cp=Math.cos(camPitch),sp=Math.sin(camPitch);const cSY=Math.sin(camYaw),cCY=Math.cos(camYaw);camera.position.set(ppos.x+cSY*cp*camDist,ppos.y-sp*camDist+0.4,ppos.z+cCY*cp*camDist);camera.lookAt(ppos.x,ppos.y+1.5,ppos.z);const tFOV=sprint?78:70;camera.fov+=(tFOV-camera.fov)*5*dt;camera.updateProjectionMatrix();}
+// ── PLAYER MOVEMENT ──
+function updatePlayer(dt){
+  if(!movementEnabled)return;
+  dt=Math.min(dt,0.05);
+  const suit=SUITS[player.suit]||SUITS.basic;
+  let mx=0,mz=0;
+  if(keys['KeyW']||keys['ArrowUp']||dpadState.up)mz-=1;
+  if(keys['KeyS']||keys['ArrowDown']||dpadState.down)mz+=1;
+  if(keys['KeyA']||keys['ArrowLeft']||dpadState.left)mx-=1;
+  if(keys['KeyD']||keys['ArrowRight']||dpadState.right)mx+=1;
+  const mlen=Math.sqrt(mx*mx+mz*mz);if(mlen>1){mx/=mlen;mz/=mlen;}
+  const moving=mlen>0.05;
+  const sprint=(isSprinting||player.sprinting)&&player.sta>3&&moving;
+  const spd=suit.spd*(sprint?1.8:1.0);
+  if(sprint)player.sta=Math.max(0,player.sta-26*suit.sta*dt);else player.sta=Math.min(player.maxSta,player.sta+14*suit.sta*dt);
+  const g=probeGround(ppos.x,ppos.z);pGroundY=g.groundY;pSlope=g.slope;
+  const sinY=Math.sin(camYaw),cosY=Math.cos(camYaw);
+  const wx=mx*cosY-mz*sinY,wz=mx*sinY+mz*cosY;
+  const accel=pGround?18:6;const tvx=wx*spd,tvz=wz*spd;
+  if(pGround&&pSlope>5&&pSlope<MAX_SLOPE){const dot=tvx*g.nx+tvz*g.nz;pvel.x+=(tvx-dot*g.nx-pvel.x)*accel*dt;pvel.z+=(tvz-dot*g.nz-pvel.z)*accel*dt;}
+  else{pvel.x+=(tvx-pvel.x)*accel*dt;pvel.z+=(tvz-pvel.z)*accel*dt;}
+  if(!pGround||pvel.y>0)pvel.y+=GRAVITY*(pvel.y<0?FALL_M:1.0)*dt;
+  if(pJumpBuf>0)pJumpBuf-=dt;if(pGround)pCoyote=0.16;else pCoyote=Math.max(0,pCoyote-dt);
+  if(pJumpBuf>0&&pCoyote>0){pvel.y=suit.jump;pJumpBuf=0;pCoyote=0;pGround=false;}
+  if(pGround&&pSlope>MAX_SLOPE){pvel.x+=g.nx*6*dt;pvel.z+=g.nz*6*dt;}
+  ppos.x+=pvel.x*dt;ppos.y+=pvel.y*dt;ppos.z+=pvel.z*dt;
+  if(ppos.y<=pGroundY){ppos.y=pGroundY;pvel.y=0;pGround=true;}else if(ppos.y>pGroundY+0.08){pGround=false;}
+  if(pGround&&!moving){pvel.x*=Math.pow(0.1,dt*10);pvel.z*=Math.pow(0.1,dt*10);}
+  // Camera
+  yawD*=0.78;pitchD*=0.78;camYaw+=yawD;camPitch=Math.max(-1.2,Math.min(0.6,camPitch+pitchD));
+  const tD=sprint?6.2:5.0;camDist+=(tD-camDist)*7*dt;
+  const cp=Math.cos(camPitch),sp=Math.sin(camPitch);const cSY=Math.sin(camYaw),cCY=Math.cos(camYaw);
+  camera.position.set(ppos.x+cSY*cp*camDist,ppos.y-sp*camDist+0.4,ppos.z+cCY*cp*camDist);
+  camera.lookAt(ppos.x,ppos.y+1.5,ppos.z);
+  const tFOV=sprint?78:70;camera.fov+=(tFOV-camera.fov)*5*dt;camera.updateProjectionMatrix();
+  // Update player mesh
+  if(playerMesh){playerMesh.position.set(ppos.x,ppos.y-PLAYER_H,ppos.z);if(moving)playerMesh.rotation.y=-camYaw+Math.PI;}
+  // Face camera — billboard NPC labels
+  npcMeshes.forEach(nm=>{nm.rotation.y=Math.atan2(ppos.x-nm.position.x,ppos.z-nm.position.z);});
+}
 
-// ════════════════════════════════════════════════════════════════════
-//  FRUSTUM CULLING
-// ════════════════════════════════════════════════════════════════════
+// ── FRUSTUM CULLING ──
 const frustum=new THREE.Frustum(),fmat=new THREE.Matrix4();
 function cullChunks(){fmat.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);frustum.setFromProjectionMatrix(fmat);for(const[,{mesh}]of chunks)mesh.visible=frustum.intersectsObject(mesh);}
 
-// ════════════════════════════════════════════════════════════════════
-//  DEBUG PANEL
-// ════════════════════════════════════════════════════════════════════
-let fpsAcc=0,fpsN=0,dispFPS=60;
-function updateDebug(dt){fpsN++;fpsAcc+=dt;if(fpsAcc>=0.5){dispFPS=Math.round(fpsN/fpsAcc);fpsN=0;fpsAcc=0;}const dc=renderer.info.render.calls;const currentK=getKingdom(ppos.x,ppos.z);const kd=KINGDOMS[currentK];document.getElementById('dbg').innerHTML=`<b style="color:#4dd9ff">DEBUG</b><br>POS X:${ppos.x.toFixed(0)} Y:${ppos.y.toFixed(0)} Z:${ppos.z.toFixed(0)}<br>JOY X:${JOY.x.toFixed(2)} Y:${JOY.y.toFixed(2)}<br>FPS ${dispFPS} | DC:${dc}<br>KINGDOM ${kd?kd.name:'?'}<br>BIOME ${getBiome(ppos.x,ppos.z).toUpperCase()}<br>TREES T:${trunkIM?trunkIM.count:0} L:${leafIM?leafIM.count:0}<br>CHUNKS ${chunks.size} | SEED ${WORLD_SEED}`;document.getElementById('biome-pill').textContent=getBiome(ppos.x,ppos.z).toUpperCase()+' · '+getKingdom(ppos.x,ppos.z).toUpperCase();updateHUDBars();updateRepHUD();}
+// ── HUD UPDATE ──
+let fpsAcc=0,fpsN=0,lastKingdom='',autoSaveTimer=0;
+function updateHUD(dt){
+  fpsN++;fpsAcc+=dt;if(fpsAcc>=0.5){fpsAcc=0;fpsN=0;}
+  autoSaveTimer+=dt;if(autoSaveTimer>60){autoSaveTimer=0;autoSave();}
+  const currentK=getKingdom(ppos.x,ppos.z);const kd=KINGDOMS[currentK];
+  if(currentK!==lastKingdom){if(lastKingdom!=='')addNotif(`${kd.icon} Entered: ${kd.name}`,'discovery');lastKingdom=currentK;document.getElementById('k-nm').textContent=kd.name;document.getElementById('k-nm').style.color=kd.col;}
+  document.getElementById('biome-pill').textContent=getBiome(ppos.x,ppos.z).toUpperCase()+' · '+currentK.toUpperCase();
+  updateHUDBars();updateRepHUD();
+  // Village discovery
+  villages.forEach(v=>{if(!v.discovered){const dx=v.cx-ppos.x,dz=v.cz-ppos.z;if(Math.sqrt(dx*dx+dz*dz)<20){v.discovered=true;addNotif(`🏘️ ${v.name} discovered!`,'discovery');gainXP(50);}}});
+  if(fpsN%3===0)renderMinimap();
+  checkNearNPCs();
+}
 
-// ════════════════════════════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════════════════════════════
+// ── TUTORIAL ──
+const TUTORIAL_SCRIPT=[
+  {text:"Welcome, traveler. I am The Wanderer — a guide to those who arrive in this world without memory of how they came here.",choices:[{label:"Tell me about this world.",next:1}]},
+  {text:"This world is divided into four great kingdoms. The Kingdom of Sun. The Kingdom of Water. The Kingdom of Forest. And the Kingdom of Technology. Each follows a different God.",choices:[{label:"What are the Gods?",next:2},{label:"Tell me about the kingdoms.",next:5}]},
+  {text:"Long ago, the four Gods gifted Divine Potions to mortals. Sun God — Ra. Water God — Thalassa. Forest God — Sylvanus. Tech God — Mechanis. These potions grant extraordinary power.",choices:[{label:"How do I choose a God?",next:3},{label:"What are Divine Potions?",next:4}]},
+  {text:"You cannot choose lightly. Once you forge a Divine Covenant, it cannot be broken. Your chosen God shapes your abilities and potions. Visit a Temple in the capital to choose.",choices:[{label:"What are Divine Potions?",next:4}]},
+  {text:"Divine Potions are elixirs granted by the Gods. Each God offers three tiers — from basic boons to legendary power. Craft them at temples using rare ingredients.",choices:[{label:"Tell me about the kingdoms.",next:5}]},
+  {text:"Each kingdom contains villages, people, rulers, and armies. You may become their ally… or their enemy. Rise high enough, and you may become their Champion.",choices:[{label:"What are villages?",next:6},{label:"How do I join a kingdom?",next:8}]},
+  {text:"Villages are the heart of every kingdom. In villages you can trade at merchant shops, accept quests from chiefs, meet people, and learn rumors that lead to hidden treasure.",choices:[{label:"Can I build a home?",next:7}]},
+  {text:"One day, yes. A small camp may become a house. A house may become an estate. A true hero may even build a settlement and name it their own.",choices:[{label:"How do I join a kingdom?",next:8}]},
+  {text:"You belong to no kingdom today. Earn their trust by helping their people. Complete their quests. Raise your reputation. When the time is right — choose your allegiance.",choices:[{label:"What is my goal?",next:9}]},
+  {text:"The Gods grow distant. The kingdoms grow restless. Ancient truths have been forgotten. Discover what lies beneath the surface. Choose your path. Shape the future of this world.",choices:[{label:"I understand. Begin my journey.",next:-1}]}
+];
+let tutStep=0;
+function showTutorial(){document.getElementById('tutorial').style.display='flex';renderTutStep(0);}
+function renderTutStep(idx){tutStep=idx;const step=TUTORIAL_SCRIPT[idx];document.getElementById('tut-text').textContent=step.text;const ch=document.getElementById('tut-choices');ch.innerHTML=step.choices.map(c=>`<div class="tut-choice primary" onclick="tutChoose(${c.next})">${c.label}</div>`).join('');const prog=document.getElementById('tut-progress');prog.innerHTML=TUTORIAL_SCRIPT.map((_,i)=>`<div class="tut-dot${i===idx?' active':''}"></div>`).join('');}
+function tutChoose(nextIdx){if(nextIdx===-1){endTutorial();return;}renderTutStep(nextIdx);}
+function endTutorial(){
+  document.getElementById('tutorial').style.display='none';
+  movementEnabled=true;
+  addItem({id:'world_map_item',name:'World Map',icon:'🗺️',cat:'relics',rar:'ri',qty:1});
+  updateQuestTracker();
+  setTimeout(()=>addNotif('🗺️ World Map — press M or ☰ Menu','discovery'),600);
+  setTimeout(()=>addNotif('Use ☰ Menu for Inventory, Quests, Crafting and more',''),2800);
+  setTimeout(()=>addNotif('Reach the nearest village to begin your journey',''),5200);
+}
+
+// ── INIT ──
 const sleep2=ms=>new Promise(r=>setTimeout(r,ms));
 function setLoad(p,m){document.getElementById('lp').style.width=p+'%';document.getElementById('ls').textContent=m;}
 let ready=false;
@@ -828,26 +1177,40 @@ async function init(){
   setLoad(14,'Lights…');setupLights();await sleep2(15);
   setLoad(22,'Water…');buildWater();await sleep2(15);
   setLoad(30,'Trees…');initTrees();await sleep2(15);
-  setLoad(42,'Kingdoms…');
-  // Show kingdom info
-  Object.values(KINGDOMS).forEach(k=>{document.getElementById('ls').textContent=`Placing ${k.name}…`;});
+  setLoad(42,'Finding spawn…');const spH=terrainH(0,0);ppos.set(0,spH+PLAYER_H+3,0);await sleep2(10);
+  setLoad(55,'Building terrain…');
+  for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){
+    const cx2=dx+Math.floor(ppos.x/CSIZ),cz2=dz+Math.floor(ppos.z/CSIZ),k=ck(cx2,cz2);
+    if(!chunks.has(k)){const segs=(Math.abs(dx)<=1&&Math.abs(dz)<=1)?SEG_N:SEG_M;const mesh=buildChunk(cx2,cz2,segs);scene.add(mesh);chunks.set(k,{mesh,cx:cx2,cz:cz2});spawnDecor(cx2,cz2);}
+    setLoad(55+Math.round(((dz+2)*5+(dx+2))/25*28),'Building world…');await sleep2(4);}
+  setLoad(83,'Placing villages…');spawnNearbyVillages();await sleep2(30);
+  setLoad(90,'Spawning characters…');
+  // Build player mesh
+  playerMesh=buildPlayerMesh();
+  playerMesh.position.set(ppos.x,ppos.y-PLAYER_H,ppos.z);
+  // Spawn 3-5 enemy warrior capsules scattered around
+  for(let i=0;i<4;i++){
+    const angle=i*(Math.PI/2)+Math.random()*0.5;
+    const dist=30+Math.random()*20;
+    const ex=ppos.x+Math.cos(angle)*dist,ez=ppos.z+Math.sin(angle)*dist;
+    const ey=terrainH(ex,ez);
+    if(ey>2)enemyMeshes.push(buildEnemyCapsule(ex,ey,ez));
+  }
   await sleep2(20);
-  setLoad(52,'Spawn…');const spH=terrainH(0,0);ppos.set(0,spH+PLAYER_H+3,0);await sleep2(10);
-  setLoad(58,'Terrain…');
-  for(let dz=-2;dz<=2;dz++)for(let dx=-2;dx<=2;dx++){const cx=dx+Math.floor(ppos.x/CSIZ),cz=dz+Math.floor(ppos.z/CSIZ),k=ck(cx,cz);if(!chunks.has(k)){const segs=(Math.abs(dx)<=1&&Math.abs(dz)<=1)?SEG_N:SEG_M;const mesh=buildChunk(cx,cz,segs);scene.add(mesh);chunks.set(k,{mesh,cx,cz});spawnDecor(cx,cz);}setLoad(58+Math.round(((dz+2)*5+(dx+2))/25*35),'Building world…');await sleep2(6);}
-  // Starting quests
-  activeQuests.push(QUEST_POOL[0]);QUEST_POOL[0].accepted=true;
-  activeQuests.push(QUEST_POOL[4]);QUEST_POOL[4].accepted=true;
-  document.getElementById('k-nm').textContent='Wanderer · No Kingdom';
-  setLoad(97,'Ready…');await sleep2(80);setLoad(100,'Welcome!');await sleep2(400);
+  activeQuests=[QUEST_POOL[0]];QUEST_POOL[0].accepted=true;
+  document.getElementById('k-nm').textContent='No Kingdom';
+  updateMoneyHUD();
+  setLoad(97,'Spawning guide…');await sleep2(60);setLoad(100,'Welcome!');await sleep2(350);
+  // FIX: force one render before fade to prevent initial glitch
+  camera.position.set(ppos.x,ppos.y+5,ppos.z+8);camera.lookAt(ppos.x,ppos.y,ppos.z);
+  renderer.render(scene,camera);
+  await sleep2(50);
   const ld=document.getElementById('load');ld.style.transition='opacity 0.6s';ld.style.opacity='0';
-  setTimeout(()=>{ld.style.display='none';addToast('⚔️ Welcome to Kingdoms of the Four Gods');},620);
+  setTimeout(()=>{ld.style.display='none';movementEnabled=false;showTutorial();},640);
   ready=true;
 }
 
-// ════════════════════════════════════════════════════════════════════
-//  MAIN LOOP
-// ════════════════════════════════════════════════════════════════════
+// ── MAIN LOOP ──
 let lastT=0,frame=0;
 function loop(now){
   requestAnimationFrame(loop);if(!ready)return;
@@ -859,10 +1222,9 @@ function loop(now){
   const dayT=updateSky(dt);
   if(waterU)waterU.uT.value=now*0.001;
   updateTrees(now*0.001,dayT);
-  // Gameplay ticks (lower freq)
-  if(frame%60===0){tickSurvival(1);tickWeather(1);tickNPCEncounters(1);}
-  if(frame%300===0)tickWar(5);
-  if(frame%6===0)updateDebug(dt);
+  if(frame%60===0){tickSurvival(1);tickWeather(1);}
+  if(frame%120===0)tickWar();
+  if(frame%6===0)updateHUD(dt);
   renderer.render(scene,camera);
 }
 init().then(()=>{lastT=performance.now();requestAnimationFrame(loop);});
