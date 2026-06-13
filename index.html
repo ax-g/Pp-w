@@ -90,11 +90,32 @@ canvas{position:fixed;top:0;left:0;width:100%;height:100%;}
 #kb{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.1);font-size:7px;white-space:nowrap;pointer-events:none;}
 /* WAR BANNER */
 #warbanner{position:fixed;top:55px;left:50%;transform:translateX(-50%);background:rgba(180,20,20,.9);border:1px solid #e74c3c;border-radius:7px;padding:5px 18px;font-size:11px;font-weight:600;color:#fff;z-index:400;display:none;}
-/* ─── MOVE BUTTON (Minecraft-style single joystick) ─── */
-#movebtn-wrap{position:fixed;bottom:18px;left:18px;z-index:300;touch-action:none;}
-#movebtn-base{width:120px;height:120px;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.18);border-radius:50%;position:relative;touch-action:none;}
-#movebtn-knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;}
-#movebtn-plus{font-size:22px;color:rgba(255,255,255,.85);pointer-events:none;line-height:1;}
+/* ─── FLOATING JOYSTICK ─── */
+#movebtn-base{
+  width:120px;height:120px;
+  background:rgba(255,255,255,.07);
+  border:2px solid rgba(255,255,255,.25);
+  border-radius:50%;
+  position:fixed;
+  bottom:24px;left:24px;
+  touch-action:none;
+  pointer-events:all;
+  z-index:300;
+  opacity:0.38;
+  transition:opacity .15s,left .05s,top .05s,bottom .05s;
+}
+#movebtn-knob{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:54px;height:54px;
+  background:rgba(255,255,255,.20);
+  border:2px solid rgba(255,255,255,.60);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+  box-shadow:0 0 10px rgba(255,255,255,.15);
+}
+#movebtn-plus{font-size:24px;color:rgba(255,255,255,.95);pointer-events:none;line-height:1;}
 /* RIGHT BUTTONS */
 #rbtns{position:fixed;bottom:18px;right:14px;z-index:300;display:flex;flex-direction:column;gap:8px;align-items:flex-end;touch-action:manipulation;}
 .rr2{display:flex;gap:8px;}
@@ -238,11 +259,9 @@ canvas{position:fixed;top:0;left:0;width:100%;height:100%;}
 </div>
 <div id="notif-stack"></div>
 <div id="warbanner">⚔️ WAR!</div>
-<!-- MOVE BUTTON (single Minecraft-style joystick) -->
-<div id="movebtn-wrap">
-  <div id="movebtn-base">
-    <div id="movebtn-knob"><div id="movebtn-plus">✛</div></div>
-  </div>
+<!-- FLOATING JOYSTICK (appears where finger touches on left zone) -->
+<div id="movebtn-base">
+  <div id="movebtn-knob"><div id="movebtn-plus">✛</div></div>
 </div>
 <!-- RIGHT BUTTONS -->
 <div id="rbtns">
@@ -590,15 +609,21 @@ function loadGLB(path,cb){
 // ── HOUSE GLB LOADING (falls back to Three.js geometry if GLB missing) ──
 function buildHouseGLB(type,wx,wy,wz,ry){
   const file=`house_${type}.glb`;
-  const scale=type===1?1.0:type===2?.75:.55;
   loadGLB(file,model=>{
     if(model){
-      model.scale.setScalar(scale);
+      // Auto-fit: measure bounding box, scale to target footprint
+      const box=new THREE.Box3().setFromObject(model);
+      const size=new THREE.Vector3();box.getSize(size);
+      const targetW=type===1?5:type===2?3.5:2.8; // metres
+      const sc=targetW/Math.max(size.x,size.z,0.01);
+      model.scale.setScalar(sc);
       model.position.set(wx,wy,wz);
       model.rotation.y=ry||0;
+      // Snap bottom of model to ground
+      const box2=new THREE.Box3().setFromObject(model);
+      model.position.y=wy-box2.min.y;
       scene.add(model);
     } else {
-      // Fallback: procedural house
       buildHouseFallback(type,wx,wy,wz,ry);
     }
   });
@@ -650,51 +675,134 @@ function updateHeldItem(){
   if(handGroup)handGroup.visible=hasWeapon;
 }
 
-// ── MOVE BUTTON (Minecraft single joystick) ──
-const MB_EL=document.getElementById('movebtn-base');
-const MK_EL=document.getElementById('movebtn-knob');
-const MJR=40; // radius
-let mjId=null,mjCX=0,mjCY=0,mjX=0,mjY=0;
-function updMBCenter(){const r=MB_EL.getBoundingClientRect();mjCX=r.left+r.width/2;mjCY=r.top+r.height/2;}
-function applyMB(px,py){
-  let dx=px-mjCX,dy=py-mjCY,mg=Math.sqrt(dx*dx+dy*dy);
-  if(mg>MJR){dx=dx/mg*MJR;dy=dy/mg*MJR;}
-  mjX=dx/MJR;mjY=dy/MJR;
-  MK_EL.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
-}
-function resetMB(){mjId=null;mjX=0;mjY=0;MK_EL.style.transform='translate(-50%,-50%)';}
-function mbDown(e){e.preventDefault();e.stopPropagation();try{MB_EL.setPointerCapture(e.pointerId);}catch(ex){}mjId=e.pointerId;updMBCenter();applyMB(e.clientX,e.clientY);}
-function mbMove(e){if(e.pointerId!==mjId)return;e.preventDefault();applyMB(e.clientX,e.clientY);}
-function mbUp(e){if(e.pointerId===mjId)resetMB();}
-MB_EL.addEventListener('pointerdown',mbDown,{passive:false});
-MB_EL.addEventListener('pointermove',mbMove,{passive:false});
-MB_EL.addEventListener('pointerup',mbUp,{passive:false});
-MB_EL.addEventListener('pointercancel',mbUp,{passive:false});
-// Also support touch events as fallback
-MB_EL.addEventListener('touchstart',e=>{e.preventDefault();const t=e.changedTouches[0];mjId=t.identifier;updMBCenter();applyMB(t.clientX,t.clientY);},{passive:false});
-MB_EL.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches){if(t.identifier===mjId)applyMB(t.clientX,t.clientY);}},{passive:false});
-MB_EL.addEventListener('touchend',e=>{for(const t of e.changedTouches){if(t.identifier===mjId)resetMB();}},{passive:false});
-MB_EL.addEventListener('touchcancel',e=>{resetMB();},{passive:false});
+// ══════════════════════════════════════════════════════
+// FIRST-PERSON MOBILE CONTROL SYSTEM
+// Left 40% = floating joystick (movement only)
+// Right 60% = camera drag (look around only)
+// Simultaneous multi-touch supported
+// ══════════════════════════════════════════════════════
 
-// ── CAMERA TOUCH DRAG ──
-let camId=null,camLx=0,camLy=0;
-canvas.addEventListener('pointerdown',e=>{
-  const mr=MB_EL.getBoundingClientRect(),rr=document.getElementById('rbtns').getBoundingClientRect();
-  const om=e.clientX>=mr.left&&e.clientX<=mr.right&&e.clientY>=mr.top&&e.clientY<=mr.bottom;
-  const or=e.clientX>=rr.left&&e.clientX<=rr.right&&e.clientY>=rr.top&&e.clientY<=rr.bottom;
-  if(om||or||camId!==null)return;
-  camId=e.pointerId;camLx=e.clientX;camLy=e.clientY;canvas.setPointerCapture(e.pointerId);
-},{passive:true});
-canvas.addEventListener('pointermove',e=>{if(e.pointerId!==camId)return;yawD+=(camLx-e.clientX)*.005;pitchD+=(camLy-e.clientY)*.005;camLx=e.clientX;camLy=e.clientY;},{passive:true});
-canvas.addEventListener('pointerup',e=>{if(e.pointerId===camId)camId=null;},{passive:true});
-canvas.addEventListener('pointercancel',e=>{if(e.pointerId===camId)camId=null;},{passive:true});
-canvas.addEventListener('click',()=>{if(!document.querySelector('.modal[style*="flex"]'))canvas.requestPointerLock().catch(()=>{});});
-let mlocked=false;addEventListener('pointerlockchange',()=>{mlocked=pointerLockElement===canvas;});
-addEventListener('mousemove',e=>{if(!mlocked)return;yawD-=e.movementX*.0024;pitchD-=e.movementY*.0024;});
+// Joystick state
+let joyActive=false,joyId=-1,joyStartX=0,joyStartY=0,joyDX=0,joyDY=0;
+const JOY_RADIUS=55; // px, half the visual base
+
+// Camera drag state
+let camActive=false,camId=-1,camLastX=0,camLastY=0;
+
+// Camera angles (yaw=horizontal, pitch=vertical)
+let camYaw=Math.PI,camPitch=0;
+// Sensitivity
+const SENS_H=0.003,SENS_V=0.003;
+
+// Joystick DOM
+const JOY_BASE=document.getElementById('movebtn-base');
+const JOY_KNOB=document.getElementById('movebtn-knob');
+
+function joyShow(cx,cy){
+  // Move joystick base so its centre is at finger position
+  JOY_BASE.style.left=(cx-60)+'px';
+  JOY_BASE.style.top=(cy-60)+'px';
+  JOY_BASE.style.bottom='auto';
+  JOY_BASE.style.opacity='0.9';
+}
+function joyHide(){
+  JOY_BASE.style.left='24px';
+  JOY_BASE.style.top='auto';
+  JOY_BASE.style.bottom='24px';
+  JOY_BASE.style.opacity='0.38';
+}
+function joyUpdate(cx,cy){
+  let dx=cx-joyStartX,dy=cy-joyStartY;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist>JOY_RADIUS){dx=dx/dist*JOY_RADIUS;dy=dy/dist*JOY_RADIUS;}
+  joyDX=dx/JOY_RADIUS;
+  joyDY=dy/JOY_RADIUS;
+  JOY_KNOB.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+}
+function joyReset(){
+  joyActive=false;joyId=-1;joyDX=0;joyDY=0;
+  JOY_KNOB.style.transform='translate(-50%,-50%)';
+  joyHide();
+}
+
+// All touch events go through one global listener on document
+// to handle multi-touch cleanly without any passive/capture issues
+document.addEventListener('touchstart',e=>{
+  if(!movEN)return;
+  if(document.querySelector('.modal[style*="flex"]'))return;
+  for(let i=0;i<e.changedTouches.length;i++){
+    const t=e.changedTouches[i];
+    const x=t.clientX,y=t.clientY;
+    const W=window.innerWidth,H=window.innerHeight;
+    const isLeftZone=x<W*0.42;
+    // Exclude RUN/JUMP buttons area (bottom-right corner)
+    const isButtonZone=x>W*0.68&&y>H*0.6;
+    if(isLeftZone&&!joyActive){
+      joyActive=true;joyId=t.identifier;
+      joyStartX=x;joyStartY=y;
+      joyShow(x,y);
+      joyUpdate(x,y);
+    } else if(!isLeftZone&&!isButtonZone&&!camActive){
+      camActive=true;camId=t.identifier;
+      camLastX=x;camLastY=y;
+    }
+  }
+  e.preventDefault();
+},{passive:false});
+
+document.addEventListener('touchmove',e=>{
+  if(!movEN)return;
+  if(document.querySelector('.modal[style*="flex"]'))return;
+  for(let i=0;i<e.changedTouches.length;i++){
+    const t=e.changedTouches[i];
+    if(joyActive&&t.identifier===joyId){
+      joyUpdate(t.clientX,t.clientY);
+    }
+    if(camActive&&t.identifier===camId){
+      const dx=t.clientX-camLastX,dy=t.clientY-camLastY;
+      camYaw-=dx*SENS_H;
+      camPitch-=dy*SENS_V;
+      camPitch=Math.max(-1.48,Math.min(1.48,camPitch));
+      camLastX=t.clientX;camLastY=t.clientY;
+    }
+  }
+  e.preventDefault();
+},{passive:false});
+
+document.addEventListener('touchend',e=>{
+  for(let i=0;i<e.changedTouches.length;i++){
+    const t=e.changedTouches[i];
+    if(joyActive&&t.identifier===joyId)joyReset();
+    if(camActive&&t.identifier===camId){camActive=false;camId=-1;}
+  }
+},{passive:false});
+
+document.addEventListener('touchcancel',e=>{
+  for(let i=0;i<e.changedTouches.length;i++){
+    const t=e.changedTouches[i];
+    if(joyActive&&t.identifier===joyId)joyReset();
+    if(camActive&&t.identifier===camId){camActive=false;camId=-1;}
+  }
+},{passive:false});
+
+// Desktop mouse look (pointer lock)
+let mlocked=false;
+canvas.addEventListener('click',()=>{
+  if(!document.querySelector('.modal[style*="flex"]'))canvas.requestPointerLock().catch(()=>{});
+});
+document.addEventListener('pointerlockchange',()=>{mlocked=document.pointerLockElement===canvas;});
+document.addEventListener('mousemove',e=>{
+  if(!mlocked)return;
+  camYaw-=e.movementX*0.002;
+  camPitch-=e.movementY*0.002;
+  camPitch=Math.max(-1.48,Math.min(1.48,camPitch));
+});
 
 // ── KEYBOARD ──
 const keys={};let isSpr=false,movEN=false;
-let camYaw=0,camPitch=.18,camDist=5,yawD=0,pitchD=0;
+const camDist=0; // unused in 1st person, kept for compat
+addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space'){e.preventDefault();doJump();}if(e.code==='KeyE')tryInteract();if(e.code==='KeyI')openModal('inv-modal');if(e.code==='KeyQ')openModal('quest-modal');if(e.code==='KeyM')openWorldMap();if(e.code==='Escape'){closeAllModals();closeWorldMap();closeMenu();closeDlg();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSpr=true;});
+addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSpr=false;});
 addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space'){e.preventDefault();doJump();}if(e.code==='KeyE')tryInteract();if(e.code==='KeyI')openModal('inv-modal');if(e.code==='KeyQ')openModal('quest-modal');if(e.code==='KeyM')openWorldMap();if(e.code==='Escape'){closeAllModals();closeWorldMap();closeMenu();closeDlg();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSpr=true;});
 addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSpr=false;});
 
@@ -857,66 +965,107 @@ function saveGame(){try{localStorage.setItem('kotfg_save',getSave());addNotif('�
 function loadGame(){try{const d=JSON.parse(localStorage.getItem('kotfg_save')||'null');if(!d){addNotif('No save found.');return;}Object.assign(player,d.player);Object.assign(wallet,d.wallet||{g:0,s:10,e:0});Object.assign(surv,d.surv||{});if(d.wT)wT=d.wT;if(d.kingdoms)Object.entries(d.kingdoms).forEach(([k,v])=>{if(KINGDOMS[k]){KINGDOMS[k].rep=v.rep||0;KINGDOMS[k].atWarWith=v.atWarWith||[];}});if(d.ppos)ppos.set(d.ppos.x,d.ppos.y,d.ppos.z);if(d.camYaw!=null)camYaw=d.camYaw;if(d.camPitch!=null)camPitch=d.camPitch;updQT();updateHUDBars();updMoney();updRepHUD();updateHeldItem();addNotif('📂 Loaded!','discovery');}catch(e){addNotif('Load failed: '+e.message);}}
 let asT=0;function autoSave(){try{localStorage.setItem('kotfg_auto',getSave());}catch(e){}}
 // ── MOVEMENT ──
-const SUITS={basic:{spd:9,jump:JF,sta:1},speed:{spd:16,jump:JF+2,sta:1.5},heavy:{spd:5,jump:JF-3,sta:.55}};
-function updPlayer(dt){if(!movEN)return;dt=Math.min(dt,.05);const suit=SUITS[player.suit]||SUITS.basic;
-  // Move input from keyboard + move button
-  let mx=0,mz=0;
-  if(keys['KeyW']||keys['ArrowUp'])mz-=1;if(keys['KeyS']||keys['ArrowDown'])mz+=1;if(keys['KeyA']||keys['ArrowLeft'])mx-=1;if(keys['KeyD']||keys['ArrowRight'])mx+=1;
-  // Move button (mjX = horizontal, mjY = forward/back)
-  if(Math.abs(mjX)>.05||Math.abs(mjY)>.05){mx+=mjX;mz+=mjY;}
-  const ml=Math.sqrt(mx*mx+mz*mz);if(ml>1){mx/=ml;mz/=ml;}
-  const moving=ml>.05||Math.abs(mjX)>.05||Math.abs(mjY)>.05;
+const SUITS={basic:{spd:8,jump:JF,sta:1},speed:{spd:14,jump:JF+2,sta:1.5},heavy:{spd:5,jump:JF-3,sta:.55}};
+function updPlayer(dt){
+  if(!movEN)return;
+  dt=Math.min(dt,.05);
+  const suit=SUITS[player.suit]||SUITS.basic;
+
+  // ── INPUT: joystick (joyDX/joyDY) + keyboard ──
+  // joyDX: strafe (-1=left, +1=right), joyDY: forward/back (-1=fwd, +1=back)
+  let inputFwd=0,inputRight=0;
+  if(keys['KeyW']||keys['ArrowUp'])inputFwd+=1;
+  if(keys['KeyS']||keys['ArrowDown'])inputFwd-=1;
+  if(keys['KeyA']||keys['ArrowLeft'])inputRight-=1;
+  if(keys['KeyD']||keys['ArrowRight'])inputRight+=1;
+  // Joystick: Y axis up = forward, down = back; X axis = strafe
+  inputFwd  +=-joyDY;  // joystick Y inverted (drag down = backward)
+  inputRight+= joyDX;
+
+  // Normalize diagonal
+  const inputLen=Math.sqrt(inputFwd*inputFwd+inputRight*inputRight);
+  if(inputLen>1){inputFwd/=inputLen;inputRight/=inputLen;}
+  const moving=inputLen>.05||Math.abs(joyDX)>.02||Math.abs(joyDY)>.02;
+
   const sprint=(isSpr||player.sprinting)&&player.sta>3&&moving;
-  const spd=suit.spd*(sprint?1.8:1);
-  if(sprint)player.sta=Math.max(0,player.sta-26*suit.sta*dt);else player.sta=Math.min(player.maxSta,player.sta+14*suit.sta*dt);
+  const spd=suit.spd*(sprint?1.75:1);
+  if(sprint)player.sta=Math.max(0,player.sta-22*suit.sta*dt);
+  else player.sta=Math.min(player.maxSta,player.sta+12*suit.sta*dt);
+
+  // ── MOVEMENT RELATIVE TO CAMERA YAW (horizontal only) ──
+  // Forward vector (horizontal): based on camYaw
+  const fwdX=Math.sin(camYaw),fwdZ=Math.cos(camYaw);
+  // Right vector (horizontal): 90° from forward
+  const rgtX=Math.cos(camYaw),rgtZ=-Math.sin(camYaw);
+  // World movement = (forward*inputFwd) + (right*inputRight)
+  const wdx=(fwdX*inputFwd + rgtX*inputRight)*spd;
+  const wdz=(fwdZ*inputFwd + rgtZ*inputRight)*spd;
+
+  // ── PHYSICS ──
   const g=probeGnd(ppos.x,ppos.z);pGY=g.gY;pSlp=g.sl;
-  const sY=Math.sin(camYaw),cY=Math.cos(camYaw),wx2=mx*cY-mz*sY,wz2=mx*sY+mz*cY;
-  const acc=pGnd?18:6,tvx=wx2*spd,tvz=wz2*spd;
-  if(pGnd&&pSlp>5&&pSlp<MSL){const dot=tvx*g.nx+tvz*g.nz;pvel.x+=(tvx-dot*g.nx-pvel.x)*acc*dt;pvel.z+=(tvz-dot*g.nz-pvel.z)*acc*dt;}
-  else{pvel.x+=(tvx-pvel.x)*acc*dt;pvel.z+=(tvz-pvel.z)*acc*dt;}
+  const acc=pGnd?20:5;
+  if(pGnd&&pSlp>5&&pSlp<MSL){
+    const dot=wdx*g.nx+wdz*g.nz;
+    pvel.x+=(wdx-dot*g.nx-pvel.x)*acc*dt;
+    pvel.z+=(wdz-dot*g.nz-pvel.z)*acc*dt;
+  } else {
+    pvel.x+=(wdx-pvel.x)*acc*dt;
+    pvel.z+=(wdz-pvel.z)*acc*dt;
+  }
   if(!pGnd||pvel.y>0)pvel.y+=GRAV*(pvel.y<0?FLM:1)*dt;
-  if(pJBuf>0)pJBuf-=dt;if(pGnd)pCoy=.16;else pCoy=Math.max(0,pCoy-dt);
+  if(pJBuf>0)pJBuf-=dt;
+  if(pGnd)pCoy=.16;else pCoy=Math.max(0,pCoy-dt);
   if(pJBuf>0&&pCoy>0){pvel.y=suit.jump;pJBuf=0;pCoy=0;pGnd=false;}
-  if(pGnd&&pSlp>MSL){pvel.x+=g.nx*6*dt;pvel.z+=g.nz*6*dt;}
+  if(pGnd&&pSlp>MSL){pvel.x+=g.nx*5*dt;pvel.z+=g.nz*5*dt;}
   ppos.x+=pvel.x*dt;ppos.y+=pvel.y*dt;ppos.z+=pvel.z*dt;
-  if(ppos.y<=pGY){ppos.y=pGY;pvel.y=0;pGnd=true;}else if(ppos.y>pGY+.08)pGnd=false;
-  if(pGnd&&!moving){pvel.x*=Math.pow(.1,dt*10);pvel.z*=Math.pow(.1,dt*10);}
+  if(ppos.y<=pGY){ppos.y=pGY;pvel.y=0;pGnd=true;}
+  else if(ppos.y>pGY+.08)pGnd=false;
+  if(pGnd&&!moving){pvel.x*=Math.pow(.08,dt*10);pvel.z*=Math.pow(.08,dt*10);}
+
   // ── FIRST PERSON CAMERA ──
-  yawD*=.78;pitchD*=.78;camYaw+=yawD;camPitch=Math.max(-.8,Math.min(.7,camPitch+pitchD));
-  // Eye position = player pos + eye height
-  const eyeH=1.62;
-  camera.position.set(ppos.x,ppos.y-PH+eyeH,ppos.z);
-  // Look direction from pitch+yaw
-  const lookX=ppos.x+Math.sin(camYaw)*Math.cos(camPitch);
-  const lookY=(ppos.y-PH+eyeH)+Math.sin(camPitch);
-  const lookZ=ppos.z+Math.cos(camYaw)*Math.cos(camPitch);
-  camera.lookAt(lookX,lookY,lookZ);
-  const tFOV=sprint?85:75;camera.fov+=(tFOV-camera.fov)*5*dt;camera.updateProjectionMatrix();
-  // Hide player body in 1st person (only show hand/sword)
+  // Eye sits 1.62m above feet (which are at ppos.y - PH)
+  const eyeY=ppos.y-PH+1.62;
+  camera.position.set(ppos.x,eyeY,ppos.z);
+
+  // Look target from camYaw + camPitch
+  const cpCos=Math.cos(camPitch),cpSin=Math.sin(camPitch);
+  camera.lookAt(
+    ppos.x + Math.sin(camYaw)*cpCos,
+    eyeY   + cpSin,
+    ppos.z + Math.cos(camYaw)*cpCos
+  );
+  const tFOV=sprint?85:75;
+  camera.fov+=(tFOV-camera.fov)*6*dt;
+  camera.updateProjectionMatrix();
+
+  // ── PLAYER SHADOW BODY (hidden but casts shadow) ──
   if(playerGroup){
     playerGroup.position.set(ppos.x,ppos.y-PH,ppos.z);
     playerGroup.rotation.y=-camYaw+Math.PI;
-    // Hide body parts visible to self; keep shadow
-    playerGroup.children.forEach(c=>{c.visible=false;});
+    // Keep shadow, hide visual
+    playerGroup.children.forEach(c=>{c.visible=false;c.castShadow=true;});
   }
-  // ── 1ST PERSON HAND / SWORD ──
-  // Place sword in bottom-right of field of view
-  if(handGroup){
-    const hFwd=.55,hRight=.38,hDown=.48;
-    const fwdX=Math.sin(camYaw)*Math.cos(camPitch),fwdZ=Math.cos(camYaw)*Math.cos(camPitch);
-    const rightX=Math.cos(camYaw),rightZ=-Math.sin(camYaw);
+
+  // ── 1ST PERSON SWORD (fixed to camera, bottom-right) ──
+  if(handGroup&&handGroup.visible){
+    // Compute right and down vectors from camera orientation
+    const rightX2=Math.cos(camYaw),rightZ2=-Math.sin(camYaw);
     handGroup.position.set(
-      camera.position.x + fwdX*hFwd + rightX*hRight,
-      camera.position.y - hDown + Math.sin(camPitch)*hFwd*.5,
-      camera.position.z + fwdZ*hFwd + rightZ*hRight
+      camera.position.x + Math.sin(camYaw)*cpCos*.5 + rightX2*.32,
+      eyeY - .44 + cpSin*.2,
+      camera.position.z + Math.cos(camYaw)*cpCos*.5 + rightZ2*.32
     );
     handGroup.rotation.order='YXZ';
-    handGroup.rotation.y=-camYaw+.12;
-    handGroup.rotation.x=camPitch*.4-.25;
-    handGroup.rotation.z=.08;
+    handGroup.rotation.y=-camYaw+.15;
+    handGroup.rotation.x=camPitch*.5-.28;
+    handGroup.rotation.z=.1;
   }
-  // Make NPCs face player
-  npcList.forEach(nm=>{const dx=ppos.x-nm.position.x,dz=ppos.z-nm.position.z;nm.rotation.y=Math.atan2(dx,dz);});
+
+  // ── NPC BILLBOARD ──
+  npcList.forEach(nm=>{
+    const dx=ppos.x-nm.position.x,dz=ppos.z-nm.position.z;
+    nm.rotation.y=Math.atan2(dx,dz);
+  });
 }
 // ── FRUSTUM ──
 const frustum=new THREE.Frustum(),fM=new THREE.Matrix4();
@@ -972,8 +1121,11 @@ async function init(){
   await s2(20);
   setLoad(94,'Player…');buildPlayerMesh();player.equip.weapon='sword';updateHeldItem();await s2(20);
   updQT();updMoney();
-  // Force render to avoid spawn glitch
-  camera.position.set(ppos.x,ppos.y+5,ppos.z+8);camera.lookAt(ppos.x,ppos.y,ppos.z);renderer.render(scene,camera);
+  // Force first render from correct 1st-person position — prevents black screen
+  const initEyeY=ppos.y-PH+1.62;
+  camera.position.set(ppos.x,initEyeY,ppos.z);
+  camera.lookAt(ppos.x+Math.sin(camYaw),initEyeY,ppos.z+Math.cos(camYaw));
+  renderer.render(scene,camera);
   setLoad(100,'Welcome!');await s2(350);
   const ld=document.getElementById('load');ld.style.transition='opacity .6s';ld.style.opacity='0';
   setTimeout(()=>{ld.style.display='none';movEN=false;showTut();},640);
