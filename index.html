@@ -339,6 +339,7 @@ canvas{position:fixed;top:0;left:0;width:100%;height:100%;}
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 'use strict';
 const isMob=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
@@ -436,7 +437,7 @@ const mPath=new THREE.MeshLambertMaterial({color:0xc4a46b}); // sandy mud colour
 const mWell=new THREE.MeshLambertMaterial({color:0x8a7560});
 const mWellW=new THREE.MeshLambertMaterial({color:0x5a4030});
 
-function buildHouse(type,wx,wy,wz,ry){
+function buildHouseFallback(type,wx,wy,wz,ry){
   const g=new THREE.Group();
   const W=type===1?5:type===2?3.5:2.8, H=type===1?3.2:type===2?2.6:2.1, D=type===1?5.5:type===2?4:3.2;
   const wm=type===1?mWall1:type===2?mWall2:mWall3;
@@ -488,16 +489,16 @@ function genVillage(seed,scx,scz){
   const biome=getBiome(ox,oz);if(biome==='mountain'||biome==='desert')return null;
   const name=vname(seed);const objs=[];const npcDefs=[];
   // 1 chief house in centre
-  objs.push(buildHouse(1,ox,wy,oz,r()*Math.PI*2));
+  buildHouseGLB(1,ox,wy,oz,r()*Math.PI*2);
   npcDefs.push({x:ox+2,z:oz+3,y:wy,role:'chief',name:'',job:'Village Chief'});
   // Well in centre near chief house
   buildWell(ox-3,wy,oz-3);
   // 2-3 rich houses
   const richN=2+Math.floor(r()*2);
-  for(let i=0;i<richN;i++){const ang=(i/richN)*Math.PI*2+r()*.4,dist=8+r()*3,rx=ox+Math.cos(ang)*dist,rz=oz+Math.sin(ang)*dist,ry2=tH(rx,rz);objs.push(buildHouse(2,rx,ry2,rz,r()*Math.PI*2));buildPath(ox,oz,rx,rz,Math.min(wy,ry2));npcDefs.push({x:rx+1.5,z:rz+2,y:ry2,role:'merchant',name:'',job:['Weapons Dealer','Potion Seller','Food Trader','General Merchant'][Math.floor(r()*4)]});}
+  for(let i=0;i<richN;i++){const ang=(i/richN)*Math.PI*2+r()*.4,dist=8+r()*3,rx=ox+Math.cos(ang)*dist,rz=oz+Math.sin(ang)*dist,ry2=tH(rx,rz);buildHouseGLB(2,rx,ry2,rz,r()*Math.PI*2);buildPath(ox,oz,rx,rz,Math.min(wy,ry2));npcDefs.push({x:rx+1.5,z:rz+2,y:ry2,role:'merchant',name:'',job:['Weapons Dealer','Potion Seller','Food Trader','General Merchant'][Math.floor(r()*4)]});}
   // 4-7 common houses
   const commN=4+Math.floor(r()*4);
-  for(let i=0;i<commN;i++){const ang=(i/commN)*Math.PI*2+r()*.5,dist=14+r()*7,cx2=ox+Math.cos(ang)*dist,cz2=oz+Math.sin(ang)*dist,cy=tH(cx2,cz2);objs.push(buildHouse(3,cx2,cy,cz2,r()*Math.PI*2));buildPath(ox,oz,cx2,cz2,Math.min(wy,cy));npcDefs.push({x:cx2+1,z:cz2+2,y:cy,role:'villager',name:'',job:['Farmer','Blacksmith','Fisher','Herbalist','Daily Worker'][Math.floor(r()*5)]});}
+  for(let i=0;i<commN;i++){const ang=(i/commN)*Math.PI*2+r()*.5,dist=14+r()*7,cx2=ox+Math.cos(ang)*dist,cz2=oz+Math.sin(ang)*dist,cy=tH(cx2,cz2);buildHouseGLB(3,cx2,cy,cz2,r()*Math.PI*2);buildPath(ox,oz,cx2,cz2,Math.min(wy,cy));npcDefs.push({x:cx2+1,z:cz2+2,y:cy,role:'villager',name:'',job:['Farmer','Blacksmith','Fisher','Herbalist','Daily Worker'][Math.floor(r()*5)]});}
   const v={cx:ox,cz:oz,wy,name,objs,npcDefs,discovered:false,npcMeshes:[]};
   return v;
 }
@@ -575,36 +576,78 @@ function updEnemies(dt){
   });
 }
 
-// ── PLAYER CAPSULE + HELD ITEM (3rd person, visible right hand) ──
+// ── GLB LOADER ──
+const gltfLoader=new THREE.GLTFLoader();
+const glbCache={};
+function loadGLB(path,cb){
+  if(glbCache[path]){cb(glbCache[path].clone());return;}
+  gltfLoader.load(path,gltf=>{
+    const m=gltf.scene;m.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+    glbCache[path]=m;cb(m.clone());
+  },null,err=>{console.warn('GLB not found:',path);cb(null);});
+}
+
+// ── HOUSE GLB LOADING (falls back to Three.js geometry if GLB missing) ──
+function buildHouseGLB(type,wx,wy,wz,ry){
+  const file=`house_${type}.glb`;
+  const scale=type===1?1.0:type===2?.75:.55;
+  loadGLB(file,model=>{
+    if(model){
+      model.scale.setScalar(scale);
+      model.position.set(wx,wy,wz);
+      model.rotation.y=ry||0;
+      scene.add(model);
+    } else {
+      // Fallback: procedural house
+      buildHouseFallback(type,wx,wy,wz,ry);
+    }
+  });
+}
+
+// ── PLAYER CAPSULE + HELD ITEM (1st person) ──
 let playerGroup,handGroup,swordMesh;
 function buildPlayerMesh(){
   playerGroup=new THREE.Group();
-  const bm=new THREE.MeshLambertMaterial({color:0x3498db}); // blue = player
+  const bm=new THREE.MeshLambertMaterial({color:0x3498db});
   const hm=new THREE.MeshLambertMaterial({color:0xf5cba7});
   const feet=new THREE.Mesh(GEO_FEET,bm);feet.position.y=0;playerGroup.add(feet);
   const body=new THREE.Mesh(GEO_BODY,bm);body.position.y=.45;playerGroup.add(body);
   const head=new THREE.Mesh(GEO_HEAD,hm);head.position.y=1.06;playerGroup.add(head);
-  // Right hand position (visible in 3rd person)
-  handGroup=new THREE.Group();handGroup.position.set(.35,.45,.0);playerGroup.add(handGroup);
-  // Sword mesh (placeholder — swap with minecraft_sword.glb when available)
-  // In-game name: "Sword" only
-  const sg=new THREE.Group();
-  const blade=new THREE.Mesh(new THREE.BoxGeometry(.06,.7,.04),new THREE.MeshLambertMaterial({color:0xcccccc}));blade.position.y=.38;sg.add(blade);
-  const guard=new THREE.Mesh(new THREE.BoxGeometry(.25,.06,.06),new THREE.MeshLambertMaterial({color:0xb8860b}));guard.position.y=.03;sg.add(guard);
-  const grip=new THREE.Mesh(new THREE.BoxGeometry(.06,.2,.06),new THREE.MeshLambertMaterial({color:0x5c3317}));grip.position.y=-.12;sg.add(grip);
-  sg.rotation.set(-.4,0,.15);sg.scale.setScalar(1.1);
-  swordMesh=sg;handGroup.add(sg);
   playerGroup.castShadow=true;
   scene.add(playerGroup);
+
+  // Hand group — placed in scene directly for 1st person view
+  handGroup=new THREE.Group();
+  scene.add(handGroup);
+
+  // Try loading minecraft_sword.glb, fall back to geometry
+  loadGLB('minecraft_sword.glb',model=>{
+    if(model){
+      model.scale.setScalar(.018);
+      model.rotation.set(-.3,.1,.15);
+      swordMesh=model;
+      handGroup.add(swordMesh);
+    } else {
+      // Fallback sword geometry
+      const sg=new THREE.Group();
+      const blade=new THREE.Mesh(new THREE.BoxGeometry(.06,.65,.04),new THREE.MeshLambertMaterial({color:0xd0d0d0}));blade.position.y=.36;sg.add(blade);
+      const guard=new THREE.Mesh(new THREE.BoxGeometry(.22,.055,.055),new THREE.MeshLambertMaterial({color:0xb8860b}));guard.position.y=.04;sg.add(guard);
+      const grip=new THREE.Mesh(new THREE.BoxGeometry(.055,.18,.055),new THREE.MeshLambertMaterial({color:0x5c3317}));grip.position.y=-.11;sg.add(grip);
+      const pommel=new THREE.Mesh(new THREE.SphereGeometry(.05,6,5),new THREE.MeshLambertMaterial({color:0xb8860b}));pommel.position.y=-.22;sg.add(pommel);
+      sg.rotation.set(-.35,0,.12);
+      swordMesh=sg;
+      handGroup.add(sg);
+    }
+  });
 }
 function updateHeldItem(){
-  // Show equipped item icon in HUD bottom-right
   const eq=player.equip.weapon;
   const it=player.inv.find(i=>i.id===eq);
   document.getElementById('held-icon').textContent=it?it.icon:'⚔️';
   document.getElementById('held-name').textContent=it?it.name:'Sword';
-  // Show/hide sword mesh based on equipped
-  if(swordMesh){swordMesh.visible=!!(eq&&player.inv.find(i=>i.id===eq&&i.cat==='weapons'));}
+  // Show handGroup only when weapon equipped
+  const hasWeapon=!!(eq&&player.inv.find(i=>i.id===eq&&i.cat==='weapons'));
+  if(handGroup)handGroup.visible=hasWeapon;
 }
 
 // ── MOVE BUTTON (Minecraft single joystick) ──
@@ -620,10 +663,18 @@ function applyMB(px,py){
   MK_EL.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
 }
 function resetMB(){mjId=null;mjX=0;mjY=0;MK_EL.style.transform='translate(-50%,-50%)';}
-MB_EL.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();MB_EL.setPointerCapture(e.pointerId);mjId=e.pointerId;updMBCenter();applyMB(e.clientX,e.clientY);},{passive:false});
-MB_EL.addEventListener('pointermove',e=>{if(e.pointerId!==mjId)return;e.preventDefault();applyMB(e.clientX,e.clientY);},{passive:false});
-MB_EL.addEventListener('pointerup',e=>{if(e.pointerId===mjId)resetMB();},{passive:false});
-MB_EL.addEventListener('pointercancel',e=>{if(e.pointerId===mjId)resetMB();},{passive:false});
+function mbDown(e){e.preventDefault();e.stopPropagation();try{MB_EL.setPointerCapture(e.pointerId);}catch(ex){}mjId=e.pointerId;updMBCenter();applyMB(e.clientX,e.clientY);}
+function mbMove(e){if(e.pointerId!==mjId)return;e.preventDefault();applyMB(e.clientX,e.clientY);}
+function mbUp(e){if(e.pointerId===mjId)resetMB();}
+MB_EL.addEventListener('pointerdown',mbDown,{passive:false});
+MB_EL.addEventListener('pointermove',mbMove,{passive:false});
+MB_EL.addEventListener('pointerup',mbUp,{passive:false});
+MB_EL.addEventListener('pointercancel',mbUp,{passive:false});
+// Also support touch events as fallback
+MB_EL.addEventListener('touchstart',e=>{e.preventDefault();const t=e.changedTouches[0];mjId=t.identifier;updMBCenter();applyMB(t.clientX,t.clientY);},{passive:false});
+MB_EL.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches){if(t.identifier===mjId)applyMB(t.clientX,t.clientY);}},{passive:false});
+MB_EL.addEventListener('touchend',e=>{for(const t of e.changedTouches){if(t.identifier===mjId)resetMB();}},{passive:false});
+MB_EL.addEventListener('touchcancel',e=>{resetMB();},{passive:false});
 
 // ── CAMERA TOUCH DRAG ──
 let camId=null,camLx=0,camLy=0;
@@ -830,15 +881,40 @@ function updPlayer(dt){if(!movEN)return;dt=Math.min(dt,.05);const suit=SUITS[pla
   ppos.x+=pvel.x*dt;ppos.y+=pvel.y*dt;ppos.z+=pvel.z*dt;
   if(ppos.y<=pGY){ppos.y=pGY;pvel.y=0;pGnd=true;}else if(ppos.y>pGY+.08)pGnd=false;
   if(pGnd&&!moving){pvel.x*=Math.pow(.1,dt*10);pvel.z*=Math.pow(.1,dt*10);}
-  // Camera
-  yawD*=.78;pitchD*=.78;camYaw+=yawD;camPitch=Math.max(-1.2,Math.min(.6,camPitch+pitchD));
-  const tD=sprint?6.2:5;camDist+=(tD-camDist)*7*dt;
-  const cp=Math.cos(camPitch),sp=Math.sin(camPitch),cSY=Math.sin(camYaw),cCY=Math.cos(camYaw);
-  camera.position.set(ppos.x+cSY*cp*camDist,ppos.y-sp*camDist+.4,ppos.z+cCY*cp*camDist);
-  camera.lookAt(ppos.x,ppos.y+1.5,ppos.z);
-  const tFOV=sprint?78:70;camera.fov+=(tFOV-camera.fov)*5*dt;camera.updateProjectionMatrix();
-  // Update player mesh
-  if(playerGroup){playerGroup.position.set(ppos.x,ppos.y-PH,ppos.z);if(moving)playerGroup.rotation.y=-camYaw+Math.PI;}
+  // ── FIRST PERSON CAMERA ──
+  yawD*=.78;pitchD*=.78;camYaw+=yawD;camPitch=Math.max(-.8,Math.min(.7,camPitch+pitchD));
+  // Eye position = player pos + eye height
+  const eyeH=1.62;
+  camera.position.set(ppos.x,ppos.y-PH+eyeH,ppos.z);
+  // Look direction from pitch+yaw
+  const lookX=ppos.x+Math.sin(camYaw)*Math.cos(camPitch);
+  const lookY=(ppos.y-PH+eyeH)+Math.sin(camPitch);
+  const lookZ=ppos.z+Math.cos(camYaw)*Math.cos(camPitch);
+  camera.lookAt(lookX,lookY,lookZ);
+  const tFOV=sprint?85:75;camera.fov+=(tFOV-camera.fov)*5*dt;camera.updateProjectionMatrix();
+  // Hide player body in 1st person (only show hand/sword)
+  if(playerGroup){
+    playerGroup.position.set(ppos.x,ppos.y-PH,ppos.z);
+    playerGroup.rotation.y=-camYaw+Math.PI;
+    // Hide body parts visible to self; keep shadow
+    playerGroup.children.forEach(c=>{c.visible=false;});
+  }
+  // ── 1ST PERSON HAND / SWORD ──
+  // Place sword in bottom-right of field of view
+  if(handGroup){
+    const hFwd=.55,hRight=.38,hDown=.48;
+    const fwdX=Math.sin(camYaw)*Math.cos(camPitch),fwdZ=Math.cos(camYaw)*Math.cos(camPitch);
+    const rightX=Math.cos(camYaw),rightZ=-Math.sin(camYaw);
+    handGroup.position.set(
+      camera.position.x + fwdX*hFwd + rightX*hRight,
+      camera.position.y - hDown + Math.sin(camPitch)*hFwd*.5,
+      camera.position.z + fwdZ*hFwd + rightZ*hRight
+    );
+    handGroup.rotation.order='YXZ';
+    handGroup.rotation.y=-camYaw+.12;
+    handGroup.rotation.x=camPitch*.4-.25;
+    handGroup.rotation.z=.08;
+  }
   // Make NPCs face player
   npcList.forEach(nm=>{const dx=ppos.x-nm.position.x,dz=ppos.z-nm.position.z;nm.rotation.y=Math.atan2(dx,dz);});
 }
