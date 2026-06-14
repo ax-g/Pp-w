@@ -458,38 +458,58 @@ const mWellW=new THREE.MeshLambertMaterial({color:0x5a4030});
 
 function buildHouseFallback(type,wx,wy,wz,ry){
   const g=new THREE.Group();
-  const W=type===1?5:type===2?3.5:2.8, H=type===1?3.2:type===2?2.6:2.1, D=type===1?5.5:type===2?4:3.2;
+  // Chief=huge, Rich=medium, Common=smaller but still visible
+  const W=type===1?14:type===2?9:6;
+  const H=type===1?8:type===2?5.5:4;
+  const D=type===1?16:type===2?10:7;
   const wm=type===1?mWall1:type===2?mWall2:mWall3;
   // Walls
-  const walls=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),wm);walls.position.y=H/2;walls.castShadow=true;walls.receiveShadow=true;g.add(walls);
-  // Roof (pyramid)
-  const rh=H*.55;const rg=new THREE.ConeGeometry(Math.max(W,D)*.72,rh,4);rg.rotateY(Math.PI/4);
+  const walls=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),wm);
+  walls.position.y=H/2;walls.castShadow=true;walls.receiveShadow=true;g.add(walls);
+  // Roof
+  const rh=H*.6;
+  const rg=new THREE.ConeGeometry(Math.max(W,D)*.74,rh,4);rg.rotateY(Math.PI/4);
   const roof=new THREE.Mesh(rg,mRoof);roof.position.y=H+rh/2-.1;roof.castShadow=true;g.add(roof);
   // Door
-  const door=new THREE.Mesh(new THREE.BoxGeometry(.65,1.1,.1),mDoor);door.position.set(0,.55,D/2+.05);g.add(door);
+  const dh=H*.45,dw=W*.1;
+  const door=new THREE.Mesh(new THREE.BoxGeometry(dw,dh,.15),mDoor);
+  door.position.set(0,dh/2,D/2+.06);g.add(door);
   // Windows
-  for(const wx2 of[W*.25,-W*.25]){const win=new THREE.Mesh(new THREE.BoxGeometry(.5,.45,.08),mWin);win.position.set(wx2,H*.58,D/2+.05);g.add(win);}
-  // Foundation step
-  const fnd=new THREE.Mesh(new THREE.BoxGeometry(W+.4,.18,D+.4),mWell);fnd.position.y=.09;fnd.receiveShadow=true;g.add(fnd);
-  g.position.set(wx,wy,wz);g.rotation.y=ry||0;
+  const wnS=type===1?1.4:type===2?1.0:.75;
+  for(const wx2 of[W*.28,-W*.28]){
+    const win=new THREE.Mesh(new THREE.BoxGeometry(wnS,wnS*.8,.1),mWin);
+    win.position.set(wx2,H*.58,D/2+.06);g.add(win);
+  }
+  // Foundation
+  const fnd=new THREE.Mesh(new THREE.BoxGeometry(W+.6,.25,D+.6),mWell);
+  fnd.position.y=.12;fnd.receiveShadow=true;g.add(fnd);
+  // Chief house gets extra decorative columns
+  if(type===1){
+    for(const cx2 of[-W*.38,W*.38]){
+      const col=new THREE.Mesh(new THREE.CylinderGeometry(.4,.45,H*.9,8),mWall1);
+      col.position.set(cx2,H*.45,D/2-.3);col.castShadow=true;g.add(col);
+    }
+  }
+  g.position.set(wx,wy,wz);
+  g.rotation.y=ry||0;
   scene.add(g);return g;
 }
 
 function buildWell(wx,wy,wz){
   const g=new THREE.Group();
-  const base=new THREE.Mesh(new THREE.CylinderGeometry(.6,.7,.5,10),mWell);base.position.y=.25;g.add(base);
-  const wall=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,.4,10,1,true),mWell);wall.position.y=.7;g.add(wall);
-  const post1=new THREE.Mesh(new THREE.BoxGeometry(.1,.9,.1),mWellW);post1.position.set(-.5,.9,0);g.add(post1);
-  const post2=new THREE.Mesh(new THREE.BoxGeometry(.1,.9,.1),mWellW);post2.position.set(.5,.9,0);g.add(post2);
-  const beam=new THREE.Mesh(new THREE.BoxGeometry(1.2,.1,.1),mWellW);beam.position.y=1.35;g.add(beam);
-  const rope=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.5,6),mWellW);rope.position.y=1.1;g.add(rope);
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.4,1.0,10),mWell);base.position.y=.5;g.add(base);
+  const wall=new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.0,.8,10,1,true),mWell);wall.position.y=1.3;g.add(wall);
+  const post1=new THREE.Mesh(new THREE.BoxGeometry(.2,1.8,.2),mWellW);post1.position.set(-1.1,1.8,0);g.add(post1);
+  const post2=new THREE.Mesh(new THREE.BoxGeometry(.2,1.8,.2),mWellW);post2.position.set(1.1,1.8,0);g.add(post2);
+  const beam=new THREE.Mesh(new THREE.BoxGeometry(2.6,.2,.2),mWellW);beam.position.y=2.7;g.add(beam);
+  const rope=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,1.0,6),mWellW);rope.position.y=2.2;g.add(rope);
   g.position.set(wx,wy,wz);scene.add(g);return g;
 }
 
 // Sandy-mud path segment (colour blends with terrain)
 function buildPath(x1,z1,x2,z2,wy){
   const dx=x2-x1,dz=z2-z1,len=Math.sqrt(dx*dx+dz*dz);
-  const p=new THREE.Mesh(new THREE.BoxGeometry(1.6,.06,len),mPath);
+  const p=new THREE.Mesh(new THREE.BoxGeometry(3.5,.08,len),mPath);
   p.position.set((x1+x2)/2,wy+.03,(z1+z2)/2);
   p.rotation.y=Math.atan2(dx,dz);
   p.receiveShadow=true;scene.add(p);return p;
@@ -507,17 +527,31 @@ function genVillage(seed,scx,scz){
   if(wy<2.5||wy>14)return null;
   const biome=getBiome(ox,oz);if(biome==='mountain'||biome==='desert')return null;
   const name=vname(seed);const objs=[];const npcDefs=[];
-  // 1 chief house in centre
+  // 1 chief house in centre (biggest)
   buildHouseGLB(1,ox,wy,oz,r()*Math.PI*2);
-  npcDefs.push({x:ox+2,z:oz+3,y:wy,role:'chief',name:'',job:'Village Chief'});
-  // Well in centre near chief house
-  buildWell(ox-3,wy,oz-3);
-  // 2-3 rich houses
+  npcDefs.push({x:ox+4,z:oz+9,y:wy,role:'chief',name:'',job:'Village Chief'});
+  // Well next to chief house
+  buildWell(ox-6,wy,oz-6);
+  // 2-3 rich houses — further out to not overlap chief house
   const richN=2+Math.floor(r()*2);
-  for(let i=0;i<richN;i++){const ang=(i/richN)*Math.PI*2+r()*.4,dist=8+r()*3,rx=ox+Math.cos(ang)*dist,rz=oz+Math.sin(ang)*dist,ry2=tH(rx,rz);buildHouseGLB(2,rx,ry2,rz,r()*Math.PI*2);buildPath(ox,oz,rx,rz,Math.min(wy,ry2));npcDefs.push({x:rx+1.5,z:rz+2,y:ry2,role:'merchant',name:'',job:['Weapons Dealer','Potion Seller','Food Trader','General Merchant'][Math.floor(r()*4)]});}
-  // 4-7 common houses
+  for(let i=0;i<richN;i++){
+    const ang=(i/richN)*Math.PI*2+r()*.4;
+    const dist=20+r()*5; // further out
+    const rx=ox+Math.cos(ang)*dist,rz=oz+Math.sin(ang)*dist,ry2=tH(rx,rz);
+    buildHouseGLB(2,rx,ry2,rz,r()*Math.PI*2);
+    buildPath(ox,oz,rx,rz,Math.min(wy,ry2));
+    npcDefs.push({x:rx+2,z:rz+3,y:ry2,role:'merchant',name:'',job:['Weapons Dealer','Potion Seller','Food Trader','General Merchant'][Math.floor(r()*4)]});
+  }
+  // 4-7 common houses — ring further out still
   const commN=4+Math.floor(r()*4);
-  for(let i=0;i<commN;i++){const ang=(i/commN)*Math.PI*2+r()*.5,dist=14+r()*7,cx2=ox+Math.cos(ang)*dist,cz2=oz+Math.sin(ang)*dist,cy=tH(cx2,cz2);buildHouseGLB(3,cx2,cy,cz2,r()*Math.PI*2);buildPath(ox,oz,cx2,cz2,Math.min(wy,cy));npcDefs.push({x:cx2+1,z:cz2+2,y:cy,role:'villager',name:'',job:['Farmer','Blacksmith','Fisher','Herbalist','Daily Worker'][Math.floor(r()*5)]});}
+  for(let i=0;i<commN;i++){
+    const ang=(i/commN)*Math.PI*2+r()*.5;
+    const dist=32+r()*10;
+    const cx2=ox+Math.cos(ang)*dist,cz2=oz+Math.sin(ang)*dist,cy=tH(cx2,cz2);
+    buildHouseGLB(3,cx2,cy,cz2,r()*Math.PI*2);
+    buildPath(ox,oz,cx2,cz2,Math.min(wy,cy));
+    npcDefs.push({x:cx2+1.5,z:cz2+3.5,y:cy,role:'villager',name:'',job:['Farmer','Blacksmith','Fisher','Herbalist','Daily Worker'][Math.floor(r()*5)]});
+  }
   const v={cx:ox,cz:oz,wy,name,objs,npcDefs,discovered:false,npcMeshes:[]};
   return v;
 }
@@ -611,17 +645,21 @@ function buildHouseGLB(type,wx,wy,wz,ry){
   const file=`house_${type}.glb`;
   loadGLB(file,model=>{
     if(model){
-      // Auto-fit: measure bounding box, scale to target footprint
+      // Measure real size of GLB model
       const box=new THREE.Box3().setFromObject(model);
       const size=new THREE.Vector3();box.getSize(size);
-      const targetW=type===1?5:type===2?3.5:2.8; // metres
+      // Target widths: chief=14m, rich=9m, common=6m
+      const targetW=type===1?14:type===2?9:6;
+      // Scale so widest horizontal dimension matches target
       const sc=targetW/Math.max(size.x,size.z,0.01);
       model.scale.setScalar(sc);
       model.position.set(wx,wy,wz);
       model.rotation.y=ry||0;
-      // Snap bottom of model to ground
+      // Re-measure after scale to snap bottom to ground
+      model.updateMatrixWorld(true);
       const box2=new THREE.Box3().setFromObject(model);
       model.position.y=wy-box2.min.y;
+      model.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
       scene.add(model);
     } else {
       buildHouseFallback(type,wx,wy,wz,ry);
@@ -675,136 +713,134 @@ function updateHeldItem(){
   if(handGroup)handGroup.visible=hasWeapon;
 }
 
-// ══════════════════════════════════════════════════════
-// FIRST-PERSON MOBILE CONTROL SYSTEM
-// Left 40% = floating joystick (movement only)
-// Right 60% = camera drag (look around only)
-// Simultaneous multi-touch supported
-// ══════════════════════════════════════════════════════
-
-// Joystick state
+// ════════════════════════════════════════════════════════════
+// CONTROL SYSTEM v3 — window capture, no movEN gate on joystick
+// Left 45%  = floating joystick (movement)
+// Right 55% = camera drag (look)
+// ════════════════════════════════════════════════════════════
 let joyActive=false,joyId=-1,joyStartX=0,joyStartY=0,joyDX=0,joyDY=0;
-const JOY_RADIUS=55; // px, half the visual base
-
-// Camera drag state
 let camActive=false,camId=-1,camLastX=0,camLastY=0;
+let camYaw=Math.PI,camPitch=0.1;
+const SENS_H=0.007,SENS_V=0.006;
+const JOY_R=52;
 
-// Camera angles (yaw=horizontal, pitch=vertical)
-let camYaw=Math.PI,camPitch=0;
-// Sensitivity
-const SENS_H=0.003,SENS_V=0.003;
-
-// Joystick DOM
 const JOY_BASE=document.getElementById('movebtn-base');
 const JOY_KNOB=document.getElementById('movebtn-knob');
 
-function joyShow(cx,cy){
-  // Move joystick base so its centre is at finger position
-  JOY_BASE.style.left=(cx-60)+'px';
-  JOY_BASE.style.top=(cy-60)+'px';
+function joyShow(x,y){
+  JOY_BASE.style.left=(x-60)+'px';
+  JOY_BASE.style.top=(y-60)+'px';
   JOY_BASE.style.bottom='auto';
-  JOY_BASE.style.opacity='0.9';
+  JOY_BASE.style.opacity='0.85';
 }
 function joyHide(){
-  JOY_BASE.style.left='24px';
+  JOY_BASE.style.left='18px';
   JOY_BASE.style.top='auto';
-  JOY_BASE.style.bottom='24px';
-  JOY_BASE.style.opacity='0.38';
+  JOY_BASE.style.bottom='18px';
+  JOY_BASE.style.opacity='0.35';
 }
-function joyUpdate(cx,cy){
-  let dx=cx-joyStartX,dy=cy-joyStartY;
-  const dist=Math.sqrt(dx*dx+dy*dy);
-  if(dist>JOY_RADIUS){dx=dx/dist*JOY_RADIUS;dy=dy/dist*JOY_RADIUS;}
-  joyDX=dx/JOY_RADIUS;
-  joyDY=dy/JOY_RADIUS;
+function joyMove(x,y){
+  let dx=x-joyStartX,dy=y-joyStartY;
+  const d=Math.sqrt(dx*dx+dy*dy);
+  if(d>JOY_R){dx=dx/d*JOY_R;dy=dy/d*JOY_R;}
+  joyDX=dx/JOY_R; joyDY=dy/JOY_R;
   JOY_KNOB.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
 }
-function joyReset(){
+function joyEnd(){
   joyActive=false;joyId=-1;joyDX=0;joyDY=0;
   JOY_KNOB.style.transform='translate(-50%,-50%)';
   joyHide();
 }
 
-// All touch events go through one global listener on document
-// to handle multi-touch cleanly without any passive/capture issues
-document.addEventListener('touchstart',e=>{
-  if(!movEN)return;
-  if(document.querySelector('.modal[style*="flex"]'))return;
+// ── TOUCH: window capture phase so UI elements can't eat our events ──
+function isModalOpen(){return!!document.querySelector('.modal[style*="flex"]');}
+function isUIButton(el){
+  // Allow these to handle their own clicks
+  const id=el.id||'';const cls=el.className||'';
+  return el.tagName==='BUTTON'||cls.includes('xbtn')||cls.includes('buy-btn')||
+    cls.includes('craft-btn')||cls.includes('dchoice')||cls.includes('tut-choice')||
+    cls.includes('mi ')||cls.includes('mi-')||id==='menu-btn'||id==='smc'||
+    id==='ipr'||id==='qt-obj'||id==='dlg-x';
+}
+
+window.addEventListener('touchstart',function(e){
+  const W=window.innerWidth,H=window.innerHeight;
   for(let i=0;i<e.changedTouches.length;i++){
     const t=e.changedTouches[i];
     const x=t.clientX,y=t.clientY;
-    const W=window.innerWidth,H=window.innerHeight;
-    const isLeftZone=x<W*0.42;
-    // Exclude RUN/JUMP buttons area (bottom-right corner)
-    const isButtonZone=x>W*0.68&&y>H*0.6;
-    if(isLeftZone&&!joyActive){
+    // Skip if touching a UI button (let them handle it)
+    if(isUIButton(e.target)||isUIButton(e.target.parentElement||{}))continue;
+    // Skip if modal open (let modal handle touches)
+    if(isModalOpen())continue;
+    const inLeft=x<W*0.46;
+    const inBtnCorner=(x>W*0.63&&y>H*0.60);
+    if(inLeft&&!joyActive){
       joyActive=true;joyId=t.identifier;
       joyStartX=x;joyStartY=y;
-      joyShow(x,y);
-      joyUpdate(x,y);
-    } else if(!isLeftZone&&!isButtonZone&&!camActive){
+      joyShow(x,y);joyMove(x,y);
+      e.preventDefault();
+    }else if(!inLeft&&!inBtnCorner&&!camActive){
       camActive=true;camId=t.identifier;
       camLastX=x;camLastY=y;
+      e.preventDefault();
     }
   }
-  e.preventDefault();
-},{passive:false});
+},{passive:false,capture:true});
 
-document.addEventListener('touchmove',e=>{
-  if(!movEN)return;
-  if(document.querySelector('.modal[style*="flex"]'))return;
+window.addEventListener('touchmove',function(e){
+  let did=false;
   for(let i=0;i<e.changedTouches.length;i++){
     const t=e.changedTouches[i];
-    if(joyActive&&t.identifier===joyId){
-      joyUpdate(t.clientX,t.clientY);
-    }
-    if(camActive&&t.identifier===camId){
-      const dx=t.clientX-camLastX,dy=t.clientY-camLastY;
-      camYaw-=dx*SENS_H;
-      camPitch-=dy*SENS_V;
-      camPitch=Math.max(-1.48,Math.min(1.48,camPitch));
-      camLastX=t.clientX;camLastY=t.clientY;
+    if(joyActive&&t.identifier===joyId){joyMove(t.clientX,t.clientY);did=true;}
+    if(camActive&&t.identifier===camId&&movEN){
+      camYaw  -=(t.clientX-camLastX)*SENS_H;
+      camPitch -=(t.clientY-camLastY)*SENS_V;
+      camPitch=Math.max(-1.4,Math.min(1.4,camPitch));
+      camLastX=t.clientX;camLastY=t.clientY;did=true;
     }
   }
-  e.preventDefault();
-},{passive:false});
+  if(did)e.preventDefault();
+},{passive:false,capture:true});
 
-document.addEventListener('touchend',e=>{
+window.addEventListener('touchend',function(e){
   for(let i=0;i<e.changedTouches.length;i++){
     const t=e.changedTouches[i];
-    if(joyActive&&t.identifier===joyId)joyReset();
-    if(camActive&&t.identifier===camId){camActive=false;camId=-1;}
+    if(t.identifier===joyId)joyEnd();
+    if(t.identifier===camId){camActive=false;camId=-1;}
   }
-},{passive:false});
+},{passive:true,capture:true});
 
-document.addEventListener('touchcancel',e=>{
-  for(let i=0;i<e.changedTouches.length;i++){
-    const t=e.changedTouches[i];
-    if(joyActive&&t.identifier===joyId)joyReset();
-    if(camActive&&t.identifier===camId){camActive=false;camId=-1;}
-  }
-},{passive:false});
+window.addEventListener('touchcancel',function(e){
+  joyEnd();camActive=false;camId=-1;
+},{passive:true,capture:true});
 
-// Desktop mouse look (pointer lock)
+// ── DESKTOP MOUSE ──
 let mlocked=false;
-canvas.addEventListener('click',()=>{
-  if(!document.querySelector('.modal[style*="flex"]'))canvas.requestPointerLock().catch(()=>{});
-});
+canvas.addEventListener('click',()=>{if(!isModalOpen())canvas.requestPointerLock().catch(()=>{});});
 document.addEventListener('pointerlockchange',()=>{mlocked=document.pointerLockElement===canvas;});
 document.addEventListener('mousemove',e=>{
   if(!mlocked)return;
-  camYaw-=e.movementX*0.002;
-  camPitch-=e.movementY*0.002;
-  camPitch=Math.max(-1.48,Math.min(1.48,camPitch));
+  camYaw-=e.movementX*0.003;camPitch-=e.movementY*0.003;
+  camPitch=Math.max(-1.4,Math.min(1.4,camPitch));
 });
 
 // ── KEYBOARD ──
 const keys={};let isSpr=false,movEN=false;
-const camDist=0; // unused in 1st person, kept for compat
-addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space'){e.preventDefault();doJump();}if(e.code==='KeyE')tryInteract();if(e.code==='KeyI')openModal('inv-modal');if(e.code==='KeyQ')openModal('quest-modal');if(e.code==='KeyM')openWorldMap();if(e.code==='Escape'){closeAllModals();closeWorldMap();closeMenu();closeDlg();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSpr=true;});
-addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSpr=false;});
-addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space'){e.preventDefault();doJump();}if(e.code==='KeyE')tryInteract();if(e.code==='KeyI')openModal('inv-modal');if(e.code==='KeyQ')openModal('quest-modal');if(e.code==='KeyM')openWorldMap();if(e.code==='Escape'){closeAllModals();closeWorldMap();closeMenu();closeDlg();}if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSpr=true;});
-addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSpr=false;});
+const camDist=0;
+addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='Space'){e.preventDefault();doJump();}
+  if(e.code==='KeyE')tryInteract();
+  if(e.code==='KeyI')openModal('inv-modal');
+  if(e.code==='KeyQ')openModal('quest-modal');
+  if(e.code==='KeyM')openWorldMap();
+  if(e.code==='Escape'){closeAllModals();closeWorldMap();closeMenu();closeDlg();}
+  if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSpr=true;
+});
+addEventListener('keyup',e=>{
+  keys[e.code]=false;
+  if(e.code==='ShiftLeft'||e.code==='ShiftRight')isSpr=false;
+});
 
 // ── WORLD DATA ──
 const KINGDOMS={
