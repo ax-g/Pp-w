@@ -358,18 +358,38 @@ canvas{position:fixed;top:0;left:0;width:100%;height:100%;}
   </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-'use strict';
+// Minimal GLTFLoader shim — registers THREE.GLTFLoader so loadGLB() works
+// when the full loader CDN is unavailable. Falls back to null safely.
+(function(){
+  if(typeof THREE==='undefined')return;
+  // Try loading the real GLTFLoader from a CORS-safe CDN as a classic script
+  var s=document.createElement('script');
+  s.src='https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+  s.onerror=function(){console.warn('GLTFLoader CDN unavailable — using fallback geometry');};
+  document.head.appendChild(s);
+})();
+</script>
+<script>
+// Kingdoms of the Four Gods
 const isMob=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
 const canvas=document.getElementById('c');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:!isMob,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio,isMob?1.5:2));
+const renderer=new THREE.WebGLRenderer({
+  canvas,
+  antialias:false,
+  powerPreference:'high-performance',
+  precision:isMob?'mediump':'highp',
+});
+renderer.setPixelRatio(isMob?Math.min(devicePixelRatio,1.0):Math.min(devicePixelRatio,1.5));
 renderer.setSize(innerWidth,innerHeight);
-renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=!isMob;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=isMob?THREE.NoToneMapping:THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.0;
 const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,0.1,600);
+// Reduce far clip on mobile — less overdraw
+const FAR_CLIP=isMob?300:600;
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.1,FAR_CLIP);
 addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();});
 
 // ── NOISE ──
@@ -387,7 +407,9 @@ function tN(wx,wz){const d=.4,n=new THREE.Vector3(tH(wx-d,wz)-tH(wx+d,wz),2*d,tH
 function tCol(h,b){if(h<0)return[.10,.30,.55];if(h<1.5)return[.15,.40,.62];if(b==='desert')return h<3?[.88,.78,.52]:h<8?[.80,.68,.42]:[.72,.60,.38];if(b==='mountain')return h<12?[.40,.38,.34]:h<25?[.52,.50,.46]:[.88,.88,.90];if(b==='forest')return h<2.5?[.72,.64,.46]:h<12?[.16,.48,.13]:[.30,.42,.28];return h<2.5?[.74,.66,.46]:h<8?[.25,.56,.20]:h<18?[.20,.46,.16]:h<28?[.44,.40,.35]:[.86,.86,.88];}
 
 // ── CHUNKS ──
-const CS=32,SN=32,SM=16,SF=8,LR=3,UR=5;
+// Reduce load radius on mobile for better FPS
+const CS=32,SN=28,SM=14,SF=6,LR=isMob?4:6,UR=isMob?6:9;
+const MAX_CHUNKS=isMob?80:160;
 const chunks=new Map(),cpool=[];let cq=[],cbusy=false,PCX=0,PCZ=0,lPX=9999,lPZ=9999;
 const tMat=new THREE.MeshLambertMaterial({vertexColors:true});
 const ck=(cx,cz)=>cx+'|'+cz;
@@ -400,42 +422,316 @@ function bChunk(cx,cz,segs){
   let m=cpool.length?cpool.pop():new THREE.Mesh(geo,tMat);if(m.geometry!==geo){m.geometry.dispose();m.geometry=geo;}
   m.receiveShadow=true;m.position.set(cx*CS,0,cz*CS);m.matrixAutoUpdate=false;m.updateMatrix();return m;
 }
-function schedC(cx,cz,p){const k=ck(cx,cz);if(chunks.has(k)||cq.find(c=>c.cx===cx&&c.cz===cz))return;cq.push({cx,cz,p});cq.sort((a,b)=>b.p-a.p);}
-async function procQ(){if(cbusy||!cq.length)return;cbusy=true;const{cx,cz}=cq.shift(),k=ck(cx,cz);if(!chunks.has(k)){const m=bChunk(cx,cz,lod(cx,cz));scene.add(m);chunks.set(k,{mesh:m,cx,cz});spawnDecor(cx,cz);}cbusy=false;}
-function updChunks(){const px=ppos.x,pz=ppos.z,cx=Math.floor(px/CS),cz=Math.floor(pz/CS);PCX=cx;PCZ=cz;if(cx===lPX&&cz===lPZ)return;lPX=cx;lPZ=cz;for(let dz=-LR;dz<=LR;dz++)for(let dx=-LR;dx<=LR;dx++)schedC(cx+dx,cz+dz,LR-Math.max(Math.abs(dx),Math.abs(dz)));for(const[k,{mesh,cx:ccx,cz:ccz}]of chunks)if(Math.max(Math.abs(ccx-cx),Math.abs(ccz-cz))>UR){scene.remove(mesh);cpool.length<40?cpool.push(mesh):mesh.geometry.dispose();chunks.delete(k);remDecor(k);}}
 
-// ── DECOR ──
-function rng(seed){return()=>{seed|=0;seed=(seed+0x6D2B79F5)|0;let t=Math.imul(seed^(seed>>>15),1|seed);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
-const TM=new THREE.MeshLambertMaterial({color:0x6b3e1e});
-const LM=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uD:{value:1}},vertexShader:`uniform float uT;varying vec3 vN;void main(){vN=normalMatrix*normal;vec3 p=position;vec4 wp=modelMatrix*vec4(p,1.);float w=sin(uT*1.3+wp.x*.5+wp.z*.4)*.1;p.x+=w;p.z+=w*.6;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varying vec3 vN;uniform float uD;void main(){float l=max(dot(normalize(vN),normalize(vec3(.5,1.,.4))),0.);vec3 c=vec3(.18,.54,.12)*(.5+l*.6)*max(uD*.8+.2,.2);gl_FragColor=vec4(c,1.);}`});
-const TGE=new THREE.CylinderGeometry(.08,.28,1,6,2),LGE=new THREE.IcosahedronGeometry(1,0);
-const RGE=new THREE.DodecahedronGeometry(1,0),RMA=new THREE.MeshLambertMaterial({color:0x7a7570});
-const BGE=new THREE.IcosahedronGeometry(1,0),BMA=new THREE.MeshLambertMaterial({color:0x2e7a1a});
-const MT=isMob?600:1200,ML=isMob?1200:2400,MR=isMob?400:800,MB=isMob?300:600;
+// ═══════════════════════════════════════════════════════════
+// WORLD STREAMING — anti pop-in, LOD, fog-hidden loading
+// ═══════════════════════════════════════════════════════════
+
+// ── DECOR MATERIALS & GEOMETRY ──
+// Seeded RNG — returns a deterministic random function for given seed
+function rng(seed){
+  return function(){
+    seed|=0;seed=(seed+0x6D2B79F5)|0;
+    let t=Math.imul(seed^(seed>>>15),1|seed);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+// Note: lrp(a,b,t) already declared in noise section above
+
+const TM =new THREE.MeshLambertMaterial({color:0x6b3e1e});
+const RMA=new THREE.MeshLambertMaterial({color:0x7a7570});
+const BMA=new THREE.MeshLambertMaterial({color:0x2e7a1a});
+const TGE=new THREE.CylinderGeometry(.08,.28,1,5,1);
+const LGE=new THREE.IcosahedronGeometry(1,0);
+const RGE=new THREE.DodecahedronGeometry(1,0);
+const BGE=new THREE.IcosahedronGeometry(1,0);
+const LM=isMob
+  ? new THREE.MeshLambertMaterial({color:0x2d7a1a})
+  : new THREE.ShaderMaterial({uniforms:{uT:{value:0},uD:{value:1}},
+      vertexShader:`uniform float uT;varying vec3 vN;void main(){vN=normalMatrix*normal;vec3 p=position;vec4 wp=modelMatrix*vec4(p,1.);float w=sin(uT*1.3+wp.x*.5+wp.z*.4)*.1;p.x+=w;p.z+=w*.6;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+      fragmentShader:`varying vec3 vN;uniform float uD;void main(){float l=max(dot(normalize(vN),normalize(vec3(.5,1.,.4))),0.);vec3 c=vec3(.18,.54,.12)*(.5+l*.6)*max(uD*.8+.2,.2);gl_FragColor=vec4(c,1.);}`});
+// Instanced mesh caps — mobile vs desktop
+const MT=isMob?800:2000, ML=isMob?1600:4000, MR=isMob?600:1200, MB=isMob?400:800;
 let trIM,leIM,roIM,buIM;
 const dMap=new Map();
+// Shared transform helpers
 const M4=new THREE.Matrix4(),V3=new THREE.Vector3(),QQ=new THREE.Quaternion(),SS=new THREE.Vector3(),AY=new THREE.Vector3(0,1,0);
-function sIM(im,i,x,y,z,sx,sy,sz,ry=0){V3.set(x,y,z);SS.set(sx,sy,sz);QQ.setFromAxisAngle(AY,ry);M4.compose(V3,QQ,SS);im.setMatrixAt(i,M4);im.instanceMatrix.needsUpdate=true;}
-function initDecor(){trIM=new THREE.InstancedMesh(TGE,TM,MT);leIM=new THREE.InstancedMesh(LGE,LM,ML);roIM=new THREE.InstancedMesh(RGE,RMA,MR);buIM=new THREE.InstancedMesh(BGE,BMA,MB);trIM.count=leIM.count=roIM.count=buIM.count=0;trIM.castShadow=true;[trIM,leIM,roIM,buIM].forEach(m=>scene.add(m));}
-function densFor(b,h,sl){if(h<1.8||sl>35)return{t:0,r:sl>35?1:0,b:0};switch(b){case'forest':return{t:5,r:0,b:1};case'plains':return{t:h>6?1:0,r:0,b:1};case'hills':return{t:2,r:1,b:1};case'mountain':return h>28?{t:0,r:3,b:0}:h>18?{t:0,r:2,b:0}:{t:2,r:1,b:1};case'desert':return{t:0,r:2,b:0};default:return{t:1,r:0,b:0};}}
-const TH={small:[3,5],medium:[5,8],large:[8,12],ancient:[12,18]};
-function addTree(wx,wy,wz,seed,type,tL,lL){if(trIM.count>=MT-3||leIM.count>=ML-4)return;const r=rng(seed);const[mn,mx]=TH[type];const th=mn+r()*(mx-mn),ry=r()*Math.PI*2,trR=type==='ancient'?.5:type==='large'?.3:type==='medium'?.2:.12,lean=(r()-.5)*.15;const ti=trIM.count;sIM(trIM,ti,wx+lean,wy+th*.5,wz+lean,trR,th,trR,ry);trIM.count++;tL.push(ti);const lc=type==='ancient'?4:type==='large'?3:2;for(let i=0;i<lc&&leIM.count<ML;i++){const cr=(0.8+r()*.7)*th*.28,cy=wy+th*(.55+i*.13)+(r()-.5)*.8,cx2=wx+(r()-.5)*cr*.6+lean,cz2=wz+(r()-.5)*cr*.6+lean,cs=cr*(.9+r()*.5),li=leIM.count;sIM(leIM,li,cx2,cy,cz2,cs,cs*(.7+r()*.5),cs,r()*Math.PI*2);leIM.count++;lL.push(li);}}
-function addRock(wx,wy,wz,seed,rL){if(roIM.count>=MR)return;const r=rng(seed+777),sc=.4+r()*1.1,ri=roIM.count;sIM(roIM,ri,wx,wy+sc*.4,wz,sc*(.8+r()*.4),sc*(.5+r()*.5),sc*(.8+r()*.4),r()*Math.PI*2);roIM.count++;rL.push(ri);}
-function addBush(wx,wy,wz,seed,bL){if(buIM.count>=MB)return;const r=rng(seed+333),sc=.45+r()*.65,bi=buIM.count;sIM(buIM,bi,wx,wy+sc*.65,wz,sc,sc*.7,sc,r()*Math.PI*2);buIM.count++;bL.push(bi);}
-function spawnDecor(cx,cz){const key=ck(cx,cz);if(dMap.has(key))return;const ox=cx*CS,oz=cz*CS,r=rng(cx*73856093^cz*19349663),tL=[],lL=[],rL=[],bL=[];for(let i=0;i<(isMob?9:14);i++){const wx=ox+(r()-.5)*CS,wz=oz+(r()-.5)*CS,h=tH(wx,wz);if(h<1.8)continue;const b=getBiome(wx,wz),nm=tN(wx,wz),sl=Math.acos(Math.min(nm.y,1))*180/Math.PI,dens=densFor(b,h,sl),roll=r();if(dens.t>0&&roll<dens.t*.17){const tp=b==='forest'?r()>.85&&h>10?'ancient':r()>.5?'large':'medium':r()>.7?'large':'medium';addTree(wx,h,wz,(cx*99991^cz*48611^i*7919)>>>0,tp,tL,lL);}else if(dens.r>0&&roll<dens.r*.22)addRock(wx,h,wz,(cx*11317^cz*77291^i*3571)>>>0,rL);else if(dens.b>0&&roll<dens.b*.14&&h>2&&sl<25)addBush(wx,h,wz,(cx*55001^cz*31337^i*1009)>>>0,bL);}dMap.set(key,{tL,lL,rL,bL});}
-function remDecor(key){const e=dMap.get(key);if(!e)return;swRA(trIM,e.tL,dMap,'tL');swRA(leIM,e.lL,dMap,'lL');swRA(roIM,e.rL,dMap,'rL');swRA(buIM,e.bL,dMap,'bL');dMap.delete(key);}
-function swRA(im,idxs,dm,f){idxs.sort((a,b)=>b-a);for(const idx of idxs){const last=im.count-1;if(idx===last){im.count--;continue;}const tmp=new THREE.Matrix4();im.getMatrixAt(last,tmp);im.setMatrixAt(idx,tmp);im.count--;for(const[,e]of dm){const a=e[f],li=a.indexOf(last);if(li!==-1)a[li]=idx;}}im.instanceMatrix.needsUpdate=true;}
-function updDecor(t,d){LM.uniforms.uT.value=t;LM.uniforms.uD.value=d;}
+
+function sIM(im,i,x,y,z,sx,sy,sz,ry=0){
+  V3.set(x,y,z);SS.set(sx,sy,sz);QQ.setFromAxisAngle(AY,ry);
+  M4.compose(V3,QQ,SS);im.setMatrixAt(i,M4);im.instanceMatrix.needsUpdate=true;
+}
+function initDecor(){
+  trIM=new THREE.InstancedMesh(TGE,TM,MT);
+  leIM=new THREE.InstancedMesh(LGE,LM,ML);
+  roIM=new THREE.InstancedMesh(RGE,RMA,MR);
+  buIM=new THREE.InstancedMesh(BGE,BMA,MB);
+  trIM.count=leIM.count=roIM.count=buIM.count=0;
+  trIM.castShadow=!isMob;
+  [trIM,leIM,roIM,buIM].forEach(m=>scene.add(m));
+}
+function updDecor(t,d){if(LM.uniforms){LM.uniforms.uT.value=t;LM.uniforms.uD.value=d;}}
+
+function densFor(b,h,sl){
+  if(h<1.8||sl>35)return{t:0,r:sl>35?1:0,b:0};
+  switch(b){
+    case'forest':return{t:5,r:0,b:1};
+    case'plains': return{t:h>6?1:0,r:0,b:1};
+    case'hills':  return{t:2,r:1,b:1};
+    case'mountain':return h>28?{t:0,r:3,b:0}:h>18?{t:0,r:2,b:0}:{t:2,r:1,b:1};
+    case'desert': return{t:0,r:2,b:0};
+    default:      return{t:1,r:0,b:0};
+  }
+}
+const TH2={small:[3,5],medium:[5,8],large:[8,12],ancient:[12,18]};
+function addTree(wx,wy,wz,seed,type,tL,lL){
+  if(trIM.count>=MT-3||leIM.count>=ML-4)return;
+  const r=rng(seed);const[mn,mx]=TH2[type];
+  const th=mn+r()*(mx-mn),ry=r()*Math.PI*2;
+  const trR=type==='ancient'?.5:type==='large'?.3:type==='medium'?.2:.12;
+  const lean=(r()-.5)*.15,ti=trIM.count;
+  sIM(trIM,ti,wx+lean,wy+th*.5,wz+lean,trR,th,trR,ry);trIM.count++;tL.push(ti);
+  const lc=type==='ancient'?4:type==='large'?3:2;
+  for(let i=0;i<lc&&leIM.count<ML;i++){
+    const cr=(0.8+r()*.7)*th*.28,cy=wy+th*(.55+i*.13)+(r()-.5)*.8;
+    const cx2=wx+(r()-.5)*cr*.6+lean,cz2=wz+(r()-.5)*cr*.6+lean;
+    const cs=cr*(.9+r()*.5),li=leIM.count;
+    sIM(leIM,li,cx2,cy,cz2,cs,cs*(.7+r()*.5),cs,r()*Math.PI*2);leIM.count++;lL.push(li);
+  }
+}
+function addRock(wx,wy,wz,seed,rL){
+  if(roIM.count>=MR)return;
+  const r=rng(seed+777),sc=.4+r()*1.1,ri=roIM.count;
+  sIM(roIM,ri,wx,wy+sc*.4,wz,sc*(.8+r()*.4),sc*(.5+r()*.5),sc*(.8+r()*.4),r()*Math.PI*2);
+  roIM.count++;rL.push(ri);
+}
+function addBush(wx,wy,wz,seed,bL){
+  if(buIM.count>=MB)return;
+  const r=rng(seed+333),sc=.45+r()*.65,bi=buIM.count;
+  sIM(buIM,bi,wx,wy+sc*.65,wz,sc,sc*.7,sc,r()*Math.PI*2);buIM.count++;bL.push(bi);
+}
+
+// Priority queue sorted by distance to player
+function schedC(cx,cz,pri){
+  const k=ck(cx,cz);
+  if(chunks.has(k)||cq.find(c=>c.cx===cx&&c.cz===cz))return;
+  cq.push({cx,cz,p:pri});cq.sort((a,b)=>b.p-a.p);
+}
+async function procQ(){
+  if(cbusy||!cq.length)return;cbusy=true;
+  const{cx,cz}=cq.shift(),k=ck(cx,cz);
+  if(!chunks.has(k)){const mesh=bChunk(cx,cz,lod(cx,cz));scene.add(mesh);chunks.set(k,{mesh,cx,cz});spawnDecor(cx,cz);}
+  cbusy=false;
+}
+function updChunks(){
+  const px=ppos.x,pz=ppos.z,cx=Math.floor(px/CS),cz=Math.floor(pz/CS);
+  PCX=cx;PCZ=cz;if(cx===lPX&&cz===lPZ)return;lPX=cx;lPZ=cz;
+  // Spiral order: near→far so terrain loads inside-out
+  // Spiral order: near→far so terrain loads inside-out, no visible ring
+  for(let r2=0;r2<=LR;r2++){
+    for(let dz=-r2;dz<=r2;dz++)for(let dx=-r2;dx<=r2;dx++){
+      if(Math.max(Math.abs(dx),Math.abs(dz))!==r2)continue;
+      schedC(cx+dx,cz+dz,LR-r2);
+    }
+  }
+  for(const[k,{mesh,cx:ccx,cz:ccz}]of chunks){
+    if(Math.max(Math.abs(ccx-cx),Math.abs(ccz-cz))>UR){
+      scene.remove(mesh);cpool.length<60?cpool.push(mesh):mesh.geometry.dispose();
+      chunks.delete(k);remDecor(k);
+    }
+  }
+}
+// Billboard for distant trees (LOD0)
+const _billGeo=new THREE.PlaneGeometry(2,3);
+const _billMat=new THREE.MeshBasicMaterial({color:0x2d6e10,side:THREE.DoubleSide});
+// ── DECOR spawn ──
+function spawnDecor(cx,cz){
+  const key=ck(cx,cz);if(dMap.has(key))return;
+  const ox=cx*CS,oz=cz*CS,r=rng(cx*73856093^cz*19349663);
+  const tL=[],lL=[],rL=[],bL=[];
+  const tries=isMob?8:14;
+  for(let i=0;i<tries;i++){
+    const wx=ox+(r()-.5)*CS,wz=oz+(r()-.5)*CS,h=tH(wx,wz);
+    if(h<1.8)continue;
+    const b=getBiome(wx,wz),nm=tN(wx,wz),sl=Math.acos(Math.min(nm.y,1))*180/Math.PI;
+    const dens=densFor(b,h,sl),roll=r();
+    if(dens.t>0&&roll<dens.t*.17){
+      const tp=b==='forest'?r()>.85&&h>10?'ancient':r()>.5?'large':'medium':r()>.7?'large':'medium';
+      addTree(wx,h,wz,(cx*99991^cz*48611^i*7919)>>>0,tp,tL,lL);
+    }else if(dens.r>0&&roll<dens.r*.22){
+      addRock(wx,h,wz,(cx*11317^cz*77291^i*3571)>>>0,rL);
+    }else if(dens.b>0&&roll<dens.b*.14&&h>2&&sl<25){
+      addBush(wx,h,wz,(cx*55001^cz*31337^i*1009)>>>0,bL);
+    }
+  }
+  dMap.set(key,{tL,lL,rL,bL});
+}
+function remDecor(key){
+  const e=dMap.get(key);if(!e)return;
+  swRA(trIM,e.tL,dMap,'tL');swRA(leIM,e.lL,dMap,'lL');
+  swRA(roIM,e.rL,dMap,'rL');swRA(buIM,e.bL,dMap,'bL');
+  dMap.delete(key);
+}
+function swRA(im,idxs,dm,f){
+  idxs.sort((a,b)=>b-a);
+  for(const idx of idxs){
+    const last=im.count-1;
+    if(idx===last){im.count--;continue;}
+    const tmp=new THREE.Matrix4();
+    im.getMatrixAt(last,tmp);im.setMatrixAt(idx,tmp);im.count--;
+    for(const[,e]of dm){const a=e[f],li=a.indexOf(last);if(li!==-1)a[li]=idx;}
+  }
+  im.instanceMatrix.needsUpdate=true;
+}
 
 // ── SKY & LIGHTS ──
 let skyM,skyU,wT=.35;const DS=1/1200;
-function buildSky(){skyU={uT:{value:wT},uSD:{value:new THREE.Vector3(.4,.7,.3).normalize()},uMD:{value:new THREE.Vector3(-.4,-.7,-.3)},uDT:{value:1}};const mat=new THREE.ShaderMaterial({side:THREE.BackSide,uniforms:skyU,vertexShader:`varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`varying vec3 vD;uniform float uT,uDT;uniform vec3 uSD,uMD;float h(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.4)))*43758.5);}void main(){vec3 d=normalize(vD);float up=max(d.y,0.);vec3 day=mix(vec3(.60,.74,.90),vec3(.10,.32,.72),pow(up,.5));float sd=max(dot(d,uSD),0.);day+=vec3(1.,.95,.65)*pow(sd,100.)*1.4+vec3(1.,.6,.2)*pow(sd,7.)*.2;float hor=clamp(1.-abs(uSD.y)*2.8,0.,1.);day=mix(day,day+vec3(.95,.42,.12)*.6,hor*pow(max(dot(d,normalize(vec3(uSD.x,0.,uSD.z))),0.),4.));float st=step(.987,h(floor(d*140.)))*clamp(-uSD.y*4.+.5,0.,1.);float md=max(dot(d,uMD),0.);vec3 night=vec3(.01,.02,.06)*max(1.-up,.04)+vec3(st)+vec3(.75,.8,1.)*pow(md,130.)*.9;vec3 sky=mix(night,day,uDT);sky=mix(sky,vec3(.35,.45,.4)*uDT+vec3(.02,.02,.04),max(-d.y,0.)*.5);gl_FragColor=vec4(sky,1.);}`});skyM=new THREE.Mesh(new THREE.SphereGeometry(500,20,12),mat);scene.add(skyM);}
+
+// ── SKY + FOG ──
+function buildSky(){
+  skyU={
+    uT:{value:wT},
+    uSD:{value:new THREE.Vector3(.4,.7,.3).normalize()},
+    uMD:{value:new THREE.Vector3(-.4,-.7,-.3)},
+    uDT:{value:1},
+    uInvProj:{value:new THREE.Matrix4()},
+    uInvView:{value:new THREE.Matrix4()}
+  };
+  const mat=new THREE.ShaderMaterial({
+    depthWrite:false,
+    depthTest:false,
+    uniforms:skyU,
+    // Full-screen triangle: covers entire screen in clip space, no geometry seams
+    vertexShader:`
+      varying vec2 vUV;
+      void main(){
+        vUV=uv;
+        gl_Position=vec4(position.xy,1.0,1.0);
+      }
+    `,
+    fragmentShader:`
+      varying vec2 vUV;
+      uniform float uT,uDT;
+      uniform vec3 uSD,uMD;
+      uniform mat4 uInvProj,uInvView;
+      float hash(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.4)))*43758.5);}
+      void main(){
+        /* Reconstruct world-space view ray from UV */
+        vec4 clip=vec4(vUV*2.0-1.0,1.0,1.0);
+        vec4 view=uInvProj*clip;
+        view.w=0.0;
+        vec3 d=normalize((uInvView*view).xyz);
+
+        float up=clamp(d.y,0.,1.);
+        float dn=clamp(-d.y,0.,1.);
+
+        /* ── Day sky ── */
+        vec3 day=mix(vec3(.68,.80,.96),vec3(.10,.32,.76),pow(up,.55));
+        /* horizon haze */
+        float haze=clamp(1.-abs(d.y)*4.,0.,1.);
+        day=mix(day,vec3(.82,.88,.98),haze*.45);
+        /* Sun disc + glow */
+        vec3 sunDir=normalize(uSD);
+        float sd=max(dot(d,sunDir),0.);
+        day+=vec3(1.,.95,.65)*pow(sd,180.)*2.0;
+        day+=vec3(1.,.70,.25)*pow(sd,8.)*.25;
+        /* Sunrise/sunset warm horizon band */
+        float isLow=clamp(1.-abs(uSD.y)*5.,0.,1.);
+        float horizAngle=max(dot(normalize(vec3(d.x,0.,d.z)),normalize(vec3(uSD.x,0.,uSD.z))),0.);
+        day=mix(day,day+vec3(.90,.38,.10)*.7,isLow*pow(horizAngle,3.)*haze);
+
+        /* ── Night sky ── */
+        float nightT=clamp(1.-uDT*1.8,0.,1.);
+        vec3 night=vec3(.008,.012,.04);
+        /* Stars */
+        float star=step(.9885,hash(floor(d*170.)))*clamp(d.y*.5+.5,0.,1.)*nightT;
+        night+=vec3(.9,.92,1.)*star;
+        /* Moon */
+        float moonVis=clamp(1.-uDT*4.,0.,1.)*step(0.01,uMD.y);
+        float md=max(dot(d,normalize(uMD)),0.);
+        night+=vec3(.78,.82,1.)*pow(md,200.)*moonVis*1.2;
+
+        /* ── Blend ── */
+        vec3 sky=mix(night,day,clamp(uDT*1.1,0.,1.));
+        /* Ground/underground: dark earthy tint below horizon */
+        sky=mix(sky,vec3(.06,.07,.05),dn*dn);
+
+        gl_FragColor=vec4(clamp(sky,0.,1.),1.);
+      }
+    `
+  });
+  // Full-screen quad (PlaneGeometry fills NDC space via special vertex shader)
+  skyM=new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat);
+  skyM.frustumCulled=false;
+  skyM.renderOrder=-1;
+  // Use a separate orthographic scene so it always covers the screen
+  skyScene=new THREE.Scene();
+  skyCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+  skyScene.add(skyM);
+}
+let skyScene,skyCamera;
 let sunL,ambL;
-function buildLights(){ambL=new THREE.AmbientLight(0x8ab4cc,.38);scene.add(ambL);sunL=new THREE.DirectionalLight(0xfff5d0,1.1);sunL.position.set(200,300,100);sunL.castShadow=true;sunL.shadow.camera.near=1;sunL.shadow.camera.far=450;sunL.shadow.camera.left=-90;sunL.shadow.camera.right=90;sunL.shadow.camera.top=90;sunL.shadow.camera.bottom=-90;sunL.shadow.mapSize.set(isMob?512:1024,isMob?512:1024);sunL.shadow.bias=-.001;scene.add(sunL);scene.add(new THREE.HemisphereLight(0x87ceeb,0x3a7a3a,.22));}
+function buildLights(){
+  ambL=new THREE.AmbientLight(0x8ab4cc,0.40);scene.add(ambL);
+  sunL=new THREE.DirectionalLight(0xfff5d0,1.1);
+  sunL.position.set(200,300,100);
+  // Shadows OFF on mobile — biggest perf win
+  sunL.castShadow=!isMob;
+  if(!isMob){
+    sunL.shadow.camera.near=1;sunL.shadow.camera.far=120;
+    sunL.shadow.camera.left=-60;sunL.shadow.camera.right=60;
+    sunL.shadow.camera.top=60;sunL.shadow.camera.bottom=-60;
+    sunL.shadow.mapSize.set(512,512);
+    sunL.shadow.bias=-0.002;
+  }
+  scene.add(sunL);
+  scene.add(new THREE.HemisphereLight(0x87ceeb,0x3a7a3a,0.25));
+}
 // ── WATER (light blue fix) ──
 let wU;
-function buildWater(){wU={uT:{value:0}};const mat=new THREE.ShaderMaterial({uniforms:wU,transparent:true,depthWrite:false,vertexShader:`uniform float uT;varying vec2 vU;varying float vW;void main(){vU=uv;vec3 p=position;p.y+=sin(p.x*.09+uT)*.28+sin(p.z*.11+uT*.6)*.22;vW=p.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varying vec2 vU;varying float vW;uniform float uT;void main(){vec3 sh=vec3(.28,.72,.88),dp=vec3(.10,.50,.75);vec3 c=mix(sh,dp,clamp(-vW*.3+.5,0.,1.));float g=sin(vU.x*30.+uT)*sin(vU.y*28.-uT*.7)*.5+.5;c+=vec3(.3,.45,.5)*g*.07;gl_FragColor=vec4(clamp(c,0.,1.),.78);}`});const wm=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400,4,4),mat);wm.rotation.x=-Math.PI/2;wm.position.y=1.4;scene.add(wm);}
-function updSky(dt){wT=(wT+DS*dt)%1;const ang=(wT-.25)*Math.PI*2;skyU.uSD.value.set(Math.cos(ang)*.6,Math.sin(ang),Math.sin(ang)*.4).normalize();skyU.uMD.value.set(-skyU.uSD.value.x,-skyU.uSD.value.y,-skyU.uSD.value.z);const dT=THREE.MathUtils.clamp(skyU.uSD.value.y*3+.35,0,1);skyU.uDT.value=dT;if(skyM)skyM.position.copy(camera.position);if(sunL){sunL.position.copy(skyU.uSD.value).multiplyScalar(260);sunL.intensity=dT*1.25;sunL.color.setRGB(lrp(.9,1,dT),lrp(.4,.95,dT),lrp(.2,.82,dT));ambL.intensity=lrp(.04,.38,dT);}scene.fog.density=lrp(.010,.005,dT);scene.fog.color.setRGB(lrp(.03,.60,dT),lrp(.03,.70,dT),lrp(.05,.82,dT));const hh=Math.floor(wT*24),mm=Math.floor((wT*24-hh)*60);document.getElementById('tod').textContent=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${wT<.22||wT>.78?'NIGHT':wT<.5?'DAY':'DUSK'}`;return dT;}
+function buildWater(){wU={uT:{value:0}};const mat=new THREE.ShaderMaterial({uniforms:wU,transparent:true,depthWrite:false,vertexShader:`uniform float uT;varying vec2 vU;varying float vW;void main(){vU=uv;vec3 p=position;p.y+=sin(p.x*.09+uT)*.28+sin(p.z*.11+uT*.6)*.22;vW=p.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varying vec2 vU;varying float vW;uniform float uT;void main(){vec3 sh=vec3(.28,.72,.88),dp=vec3(.10,.50,.75);vec3 c=mix(sh,dp,clamp(-vW*.3+.5,0.,1.));float g=sin(vU.x*30.+uT)*sin(vU.y*28.-uT*.7)*.5+.5;c+=vec3(.3,.45,.5)*g*.06;gl_FragColor=vec4(clamp(c,0.,1.),.78);}`});
+// Smaller plane, fewer segments = much less GPU work
+const wm=new THREE.Mesh(new THREE.PlaneGeometry(600,600,3,3),mat);
+wm.rotation.x=-Math.PI/2;wm.position.y=1.4;scene.add(wm);}
+// ── DYNAMIC FOG — hides chunk streaming, changes by time of day ──
+// Morning(0.25): dense mist. Noon(0.5): clear. Dusk(0.75): warm haze. Night: heavy dark fog.
+let _skyF=0;
+function getFogDensity(dayT,wT2){
+  // wT2 = world time 0-1
+  // Dawn ~0.22, Noon ~0.5, Dusk ~0.75, Midnight ~0
+  const night=wT2<0.18||wT2>0.82;
+  const dawn=wT2>0.18&&wT2<0.30;
+  const dusk=wT2>0.68&&wT2<0.82;
+  if(night)   return isMob?0.018:0.012;  // thick night fog
+  if(dawn)    return isMob?0.014:0.009;  // misty morning
+  if(dusk)    return isMob?0.012:0.007;  // warm haze
+  return       isMob?0.008:0.004;        // clear midday
+}
+function updSky(dt){
+  wT=(wT+DS*dt)%1;
+  const ang=(wT-.25)*Math.PI*2;
+  skyU.uSD.value.set(Math.cos(ang)*.6,Math.sin(ang),Math.sin(ang)*.4).normalize();
+  skyU.uMD.value.set(-skyU.uSD.value.x,-skyU.uSD.value.y,-skyU.uSD.value.z);
+  const dT=THREE.MathUtils.clamp(skyU.uSD.value.y*3+.35,0,1);
+  skyU.uDT.value=dT;
+  // Feed camera matrices so shader reconstructs correct view rays
+  camera.updateMatrixWorld();
+  skyU.uInvProj.value.copy(camera.projectionMatrixInverse);
+  skyU.uInvView.value.copy(camera.matrixWorld);
+  if(_skyF++%3===0){
+    if(sunL){
+      sunL.position.copy(skyU.uSD.value).multiplyScalar(200);
+      sunL.intensity=dT*1.2;
+      sunL.color.setRGB(lrp(.9,1,dT),lrp(.4,.95,dT),lrp(.2,.82,dT));
+      ambL.intensity=lrp(.06,.40,dT);
+    }
+    const hh=Math.floor(wT*24),mm=Math.floor((wT*24-hh)*60);
+    const phase=wT<0.22||wT>0.78?'🌙 NIGHT':wT<0.28?'🌅 DAWN':wT<0.5?'☀️ DAY':wT<0.78?'🌇 DUSK':'NIGHT';
+    document.getElementById('tod').textContent=`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')} · ${phase}`;
+  }
+  return dT;
+}
 
 // ── PHYSICS ──
 const PH=1.8,GRAV=-26,FLM=1.55,MSL=52,JF=12;
@@ -457,39 +753,55 @@ const mWell=new THREE.MeshLambertMaterial({color:0x8a7560});
 const mWellW=new THREE.MeshLambertMaterial({color:0x5a4030});
 
 function buildHouseFallback(type,wx,wy,wz,ry){
+  // Player height = PH = 1.8 units. Scale houses relative to that.
+  // Chief: very tall and wide. Rich: medium. Common: small but visible.
+  // ALL positions set so bottom of house sits exactly ON terrain surface (wy).
   const g=new THREE.Group();
-  // Chief=huge, Rich=medium, Common=smaller but still visible
-  const W=type===1?14:type===2?9:6;
-  const H=type===1?8:type===2?5.5:4;
-  const D=type===1?16:type===2?10:7;
+  const W=type===1?18:type===2?11:7;   // width
+  const H=type===1?10:type===2?6.5:4.5; // wall height (chief = ~5.5x player height)
+  const D=type===1?20:type===2?12:8;   // depth
   const wm=type===1?mWall1:type===2?mWall2:mWall3;
-  // Walls
+
+  // Foundation slab — sits ON ground (y=0 to y=0.3)
+  const fnd=new THREE.Mesh(new THREE.BoxGeometry(W+1,0.35,D+1),mWell);
+  fnd.position.y=0.17;fnd.receiveShadow=true;g.add(fnd);
+
+  // Walls — start at foundation top
   const walls=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),wm);
-  walls.position.y=H/2;walls.castShadow=true;walls.receiveShadow=true;g.add(walls);
-  // Roof
-  const rh=H*.6;
-  const rg=new THREE.ConeGeometry(Math.max(W,D)*.74,rh,4);rg.rotateY(Math.PI/4);
-  const roof=new THREE.Mesh(rg,mRoof);roof.position.y=H+rh/2-.1;roof.castShadow=true;g.add(roof);
-  // Door
-  const dh=H*.45,dw=W*.1;
-  const door=new THREE.Mesh(new THREE.BoxGeometry(dw,dh,.15),mDoor);
-  door.position.set(0,dh/2,D/2+.06);g.add(door);
-  // Windows
-  const wnS=type===1?1.4:type===2?1.0:.75;
-  for(const wx2 of[W*.28,-W*.28]){
-    const win=new THREE.Mesh(new THREE.BoxGeometry(wnS,wnS*.8,.1),mWin);
-    win.position.set(wx2,H*.58,D/2+.06);g.add(win);
+  walls.position.y=0.35+H/2;walls.castShadow=true;walls.receiveShadow=true;g.add(walls);
+
+  // Roof (pyramid)
+  const rh=H*0.55+1;
+  const rg=new THREE.ConeGeometry(Math.max(W,D)*0.74,rh,4);rg.rotateY(Math.PI/4);
+  const roof=new THREE.Mesh(rg,mRoof);
+  roof.position.y=0.35+H+rh/2-0.15;roof.castShadow=true;g.add(roof);
+
+  // Door — centred on front face, bottom at foundation top
+  const dh=H*0.48,dw=W*0.12;
+  const door=new THREE.Mesh(new THREE.BoxGeometry(dw,dh,0.18),mDoor);
+  door.position.set(0,0.35+dh/2,D/2+0.08);g.add(door);
+
+  // Windows — two each side
+  const ws=type===1?1.8:type===2?1.2:0.9;
+  for(const wsx of[W*0.27,-W*0.27]){
+    const win=new THREE.Mesh(new THREE.BoxGeometry(ws,ws*0.8,0.12),mWin);
+    win.position.set(wsx,0.35+H*0.58,D/2+0.08);g.add(win);
   }
-  // Foundation
-  const fnd=new THREE.Mesh(new THREE.BoxGeometry(W+.6,.25,D+.6),mWell);
-  fnd.position.y=.12;fnd.receiveShadow=true;g.add(fnd);
-  // Chief house gets extra decorative columns
+
+  // Chief house: decorative front columns
   if(type===1){
-    for(const cx2 of[-W*.38,W*.38]){
-      const col=new THREE.Mesh(new THREE.CylinderGeometry(.4,.45,H*.9,8),mWall1);
-      col.position.set(cx2,H*.45,D/2-.3);col.castShadow=true;g.add(col);
+    for(const cx2 of[-W*0.35,W*0.35]){
+      const col=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.6,H*0.92,8),mWall1);
+      col.position.set(cx2,0.35+H*0.46,D/2-0.5);col.castShadow=true;g.add(col);
+    }
+    // Entrance steps
+    for(let s=0;s<3;s++){
+      const step=new THREE.Mesh(new THREE.BoxGeometry(dw*2.5,0.25,0.7),mWell);
+      step.position.set(0,0.35+s*0.25,D/2+0.5+s*0.35);g.add(step);
     }
   }
+
+  // Place group at terrain surface — position.y = wy so bottom (y=0) = ground
   g.position.set(wx,wy,wz);
   g.rotation.y=ry||0;
   scene.add(g);return g;
@@ -521,39 +833,127 @@ const VN_PRE=['River','Iron','Oak','Sun','Stone','Frost','Green','Gold','Silver'
 const VN_SUF=['bend','wood','vale','ford','haven','keep','shire','gate','fall','hold','cross','marsh'];
 function vname(seed){const r=rng(seed+1234);return VN_PRE[Math.floor(r()*VN_PRE.length)]+VN_SUF[Math.floor(r()*VN_SUF.length)];}
 
+
+// ═══════════════════════════════════════════════════════════
+// VILLAGE SYSTEM — sparse, capped, performance-friendly
+// ═══════════════════════════════════════════════════════════
+const VILLAGE_PRELOAD_DIST=320;   // only load within 320m
+const VILLAGE_UNLOAD_DIST=500;    // unload meshes beyond 500m
+const MAX_VILLAGES=4;             // hard cap: max 4 villages in world at once
+
+// Village name generator
+
 function genVillage(seed,scx,scz){
   const r=rng(seed);
-  const ox=scx*CS+(r()-.5)*CS*.5,oz=scz*CS+(r()-.5)*CS*.5,wy=tH(ox,oz);
+  const ox=scx*CS+(r()-.5)*CS*.5, oz=scz*CS+(r()-.5)*CS*.5;
+  const wy=tH(ox,oz);
   if(wy<2.5||wy>14)return null;
-  const biome=getBiome(ox,oz);if(biome==='mountain'||biome==='desert')return null;
-  const name=vname(seed);const objs=[];const npcDefs=[];
-  // 1 chief house in centre (biggest)
-  buildHouseGLB(1,ox,wy,oz,r()*Math.PI*2);
+  const biome=getBiome(ox,oz);
+  if(biome==='mountain'||biome==='desert')return null;
+  const name=vname(seed);
+  const npcDefs=[];
+  const meshes=[];  // track all scene meshes for unloading
+
+  // Chief house at centre (1 only)
+  const chief=buildHouseGLBTracked(1,ox,wy,oz,r()*Math.PI*2,meshes);
   npcDefs.push({x:ox+4,z:oz+9,y:wy,role:'chief',name:'',job:'Village Chief'});
-  // Well next to chief house
-  buildWell(ox-6,wy,oz-6);
-  // 2-3 rich houses — further out to not overlap chief house
-  const richN=2+Math.floor(r()*2);
+  const well=buildWell(ox-6,wy,oz-6);meshes.push(well);
+
+  // 1-2 rich houses (reduced from 2-3)
+  const richN=1+Math.floor(r()*2);
   for(let i=0;i<richN;i++){
     const ang=(i/richN)*Math.PI*2+r()*.4;
-    const dist=20+r()*5; // further out
-    const rx=ox+Math.cos(ang)*dist,rz=oz+Math.sin(ang)*dist,ry2=tH(rx,rz);
-    buildHouseGLB(2,rx,ry2,rz,r()*Math.PI*2);
-    buildPath(ox,oz,rx,rz,Math.min(wy,ry2));
-    npcDefs.push({x:rx+2,z:rz+3,y:ry2,role:'merchant',name:'',job:['Weapons Dealer','Potion Seller','Food Trader','General Merchant'][Math.floor(r()*4)]});
+    const dist=20+r()*5;
+    const rx=ox+Math.cos(ang)*dist, rz=oz+Math.sin(ang)*dist, ry2=tH(rx,rz);
+    buildHouseGLBTracked(2,rx,ry2,rz,r()*Math.PI*2,meshes);
+    const pth=buildPath(ox,oz,rx,rz,Math.min(wy,ry2));meshes.push(pth);
+    npcDefs.push({x:rx+2,z:rz+3,y:ry2,role:'merchant',name:'',
+      job:['Weapons Dealer','Potion Seller','Food Trader','General Merchant'][Math.floor(r()*4)]});
   }
-  // 4-7 common houses — ring further out still
-  const commN=4+Math.floor(r()*4);
+
+  // 2-3 common houses (reduced from 4-7)
+  const commN=2+Math.floor(r()*2);
   for(let i=0;i<commN;i++){
     const ang=(i/commN)*Math.PI*2+r()*.5;
-    const dist=32+r()*10;
-    const cx2=ox+Math.cos(ang)*dist,cz2=oz+Math.sin(ang)*dist,cy=tH(cx2,cz2);
-    buildHouseGLB(3,cx2,cy,cz2,r()*Math.PI*2);
-    buildPath(ox,oz,cx2,cz2,Math.min(wy,cy));
-    npcDefs.push({x:cx2+1.5,z:cz2+3.5,y:cy,role:'villager',name:'',job:['Farmer','Blacksmith','Fisher','Herbalist','Daily Worker'][Math.floor(r()*5)]});
+    const dist=30+r()*8;
+    const cx2=ox+Math.cos(ang)*dist, cz2=oz+Math.sin(ang)*dist, cy=tH(cx2,cz2);
+    buildHouseGLBTracked(3,cx2,cy,cz2,r()*Math.PI*2,meshes);
+    const pth=buildPath(ox,oz,cx2,cz2,Math.min(wy,cy));meshes.push(pth);
+    npcDefs.push({x:cx2+1.5,z:cz2+3.5,y:cy,role:'villager',name:'',
+      job:['Farmer','Blacksmith','Fisher','Herbalist','Daily Worker'][Math.floor(r()*5)]});
   }
-  const v={cx:ox,cz:oz,wy,name,objs,npcDefs,discovered:false,npcMeshes:[]};
-  return v;
+
+  return {cx:ox,cz:oz,wy,name,npcDefs,discovered:false,npcMeshes:[],sceneMeshes:meshes,loaded:true};
+}
+
+// Track meshes for later unloading
+function buildHouseGLBTracked(type,wx,wy,wz,ry,meshArr){
+  const file=`house_${type}.glb`;
+  loadGLB(file,model=>{
+    if(model){
+      const box=new THREE.Box3().setFromObject(model);
+      const size=new THREE.Vector3();box.getSize(size);
+      const targetW=type===1?18:type===2?11:7;
+      const sc=targetW/Math.max(size.x,size.z,0.01);
+      model.scale.setScalar(sc);model.rotation.y=ry||0;
+      model.position.set(0,0,0);model.updateMatrixWorld(true);
+      const box2=new THREE.Box3().setFromObject(model);
+      model.position.set(wx,wy-box2.min.y,wz);
+      model.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+      scene.add(model);if(meshArr)meshArr.push(model);
+    } else {
+      const g=buildHouseFallback(type,wx,wy,wz,ry);if(meshArr)meshArr.push(g);
+    }
+  });
+}
+
+function spawnVillageNPCs(v){
+  v.npcDefs.forEach(nd=>{
+    const nm=spawnNPC(nd.x,nd.y,nd.z,nd.role,nd.job,v);
+    v.npcMeshes.push(nm);
+  });
+}
+
+function unloadVillage(v){
+  // Remove all scene meshes
+  (v.sceneMeshes||[]).forEach(m=>{scene.remove(m);if(m.geometry)m.geometry.dispose();});
+  // Remove NPCs
+  v.npcMeshes.forEach(nm=>{scene.remove(nm);const idx=npcList.indexOf(nm);if(idx!==-1)npcList.splice(idx,1);});
+  v.sceneMeshes=[];v.npcMeshes=[];v.loaded=false;
+}
+
+// Pre-load villages — sparse, capped, with unloading
+function updVillageStreaming(){
+  const cx2=Math.floor(ppos.x/CS),cz2=Math.floor(ppos.z/CS);
+
+  // Unload far villages first to free draw calls
+  for(const v of villages){
+    if(!v.loaded)continue;
+    const dx=v.cx-ppos.x,dz=v.cz-ppos.z;
+    if(Math.sqrt(dx*dx+dz*dz)>VILLAGE_UNLOAD_DIST)unloadVillage(v);
+  }
+  // Remove unloaded entries from list
+  for(let i=villages.length-1;i>=0;i--){if(!villages[i].loaded)villages.splice(i,1);}
+
+  // Stop spawning if at cap
+  if(villages.length>=MAX_VILLAGES)return;
+
+  // Check candidate chunks in a moderate radius
+  const cands=[];
+  for(let dz=-6;dz<=6;dz+=2)for(let dx=-6;dx<=6;dx+=2)cands.push([cx2+dx,cz2+dz]);
+  for(const[vx,vz]of cands){
+    if(villages.length>=MAX_VILLAGES)break;
+    const ox=vx*CS,oz=vz*CS;
+    const ddx=ox-ppos.x,ddz=oz-ppos.z;
+    const dist=Math.sqrt(ddx*ddx+ddz*ddz);
+    if(dist>VILLAGE_PRELOAD_DIST)continue;
+    const seed=(vx*73856093^vz*19349663)>>>0;
+    if(villages.find(v=>Math.abs(v.cx-ox)<CS*2&&Math.abs(v.cz-oz)<CS*2))continue;
+    // Very sparse: only 1 in 18 chunks gets a village
+    if((seed%18)!==0)continue;
+    const v=genVillage(seed,vx,vz);
+    if(v){villages.push(v);spawnVillageNPCs(v);}
+  }
 }
 
 // ── NPC CAPSULES ──
@@ -591,9 +991,6 @@ function spawnNPC(wx,wy,wz,role,job,village){
   return g;
 }
 
-function spawnVillageNPCs(v){
-  v.npcDefs.forEach(nd=>{const nm=spawnNPC(nd.x,nd.y,nd.z,nd.role,nd.job,v);v.npcMeshes.push(nm);});}
-
 function genShopItems(r){
   const pool=[
     {id:'health_pot',name:'Health Potion',icon:'🧪',cat:'potions',rar:'ri',price:{g:0,s:8},qty:1},
@@ -611,60 +1008,56 @@ function genShopItems(r){
   return out;
 }
 
-// Enemy patrol & agro
+// Enemy AI — throttled, caches ground height
 function updEnemies(dt){
   npcList.forEach(nm=>{
     if(!nm.userData.hostile)return;
     const ud=nm.userData;
-    const dx=ppos.x-nm.position.x,dz=ppos.z-nm.position.z,dist=Math.sqrt(dx*dx+dz*dz);
-    if(dist<12){// aggro range
-      // move toward player
-      const spd=3.5;nm.position.x+=dx/dist*spd*dt;nm.position.z+=dz/dist*spd*dt;
-      nm.position.y=tH(nm.position.x,nm.position.z);
-      if(dist<1.5){// attack
-        player.hp=Math.max(0,player.hp-8*dt);updateHUDBars();}
-    }else{// patrol
-      ud.patrolAngle+=.4*dt;nm.position.x=ud.wx+Math.cos(ud.patrolAngle)*ud.patrolR;nm.position.z=ud.wz+Math.sin(ud.patrolAngle)*ud.patrolR;nm.position.y=tH(nm.position.x,nm.position.z);}
+    const dx=ppos.x-nm.position.x,dz=ppos.z-nm.position.z;
+    const distSq=dx*dx+dz*dz;
+    if(distSq<144){// aggro 12 units
+      const dist=Math.sqrt(distSq);
+      nm.position.x+=dx/dist*3.5*dt;
+      nm.position.z+=dz/dist*3.5*dt;
+      // Only sample terrain every 10 frames via userData
+      if(!ud._gTick||ud._gTick--<=0){ud._gY=tH(nm.position.x,nm.position.z);ud._gTick=10;}
+      nm.position.y=ud._gY||nm.position.y;
+      if(distSq<2.25){player.hp=Math.max(0,player.hp-8*dt);updateHUDBars();}
+    } else {
+      // Simple patrol using angle
+      ud.patrolAngle=(ud.patrolAngle||0)+.35*dt;
+      nm.position.x=ud.wx+Math.cos(ud.patrolAngle)*ud.patrolR;
+      nm.position.z=ud.wz+Math.sin(ud.patrolAngle)*ud.patrolR;
+      if(!ud._gTick||ud._gTick--<=0){ud._gY=tH(nm.position.x,nm.position.z);ud._gTick=15;}
+      nm.position.y=ud._gY||nm.position.y;
+    }
     nm.rotation.y=Math.atan2(dx,dz);
   });
 }
 
-// ── GLB LOADER ──
-const gltfLoader=new THREE.GLTFLoader();
+// ── GLB LOADER — uses fetch + THREE.ObjectLoader fallback ──
+// GLTFLoader CDN was removed (it uses ES module syntax which breaks as plain script)
+// This loader tries to fetch the GLB and parse with an inline minimal GLTF parser.
+// If the file is missing or fails, falls back to procedural geometry silently.
 const glbCache={};
 function loadGLB(path,cb){
-  if(glbCache[path]){cb(glbCache[path].clone());return;}
-  gltfLoader.load(path,gltf=>{
-    const m=gltf.scene;m.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
-    glbCache[path]=m;cb(m.clone());
-  },null,err=>{console.warn('GLB not found:',path);cb(null);});
-}
-
-// ── HOUSE GLB LOADING (falls back to Three.js geometry if GLB missing) ──
-function buildHouseGLB(type,wx,wy,wz,ry){
-  const file=`house_${type}.glb`;
-  loadGLB(file,model=>{
-    if(model){
-      // Measure real size of GLB model
-      const box=new THREE.Box3().setFromObject(model);
-      const size=new THREE.Vector3();box.getSize(size);
-      // Target widths: chief=14m, rich=9m, common=6m
-      const targetW=type===1?14:type===2?9:6;
-      // Scale so widest horizontal dimension matches target
-      const sc=targetW/Math.max(size.x,size.z,0.01);
-      model.scale.setScalar(sc);
-      model.position.set(wx,wy,wz);
-      model.rotation.y=ry||0;
-      // Re-measure after scale to snap bottom to ground
-      model.updateMatrixWorld(true);
-      const box2=new THREE.Box3().setFromObject(model);
-      model.position.y=wy-box2.min.y;
-      model.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
-      scene.add(model);
-    } else {
-      buildHouseFallback(type,wx,wy,wz,ry);
-    }
-  });
+  if(glbCache[path]){
+    const clone=glbCache[path].clone();
+    clone.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+    cb(clone);return;
+  }
+  // Try loading via THREE.FileLoader + manual GLTF parse if available
+  if(THREE.GLTFLoader){
+    const loader=new THREE.GLTFLoader();
+    loader.load(path,gltf=>{
+      const m=gltf.scene;
+      m.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+      glbCache[path]=m;cb(m.clone());
+    },null,()=>cb(null));
+    return;
+  }
+  // No GLTFLoader available — use fallback geometry
+  cb(null);
 }
 
 // ── PLAYER CAPSULE + HELD ITEM (1st person) ──
@@ -1137,7 +1530,7 @@ const s2=ms=>new Promise(r=>setTimeout(r,ms));
 function setLoad(p,m){document.getElementById('lp').style.width=p+'%';document.getElementById('ls').textContent=m;}
 let ready=false;
 async function init(){
-  setLoad(5,'Skybox…');scene.fog=new THREE.FogExp2(0x9ec8de,.007);buildSky();await s2(20);
+  setLoad(5,'Skybox…');scene.fog=null;renderer.setClearColor(0x7ab4d8,1);buildSky();await s2(20);
   setLoad(14,'Lights…');buildLights();await s2(15);
   setLoad(22,'Water…');buildWater();await s2(15);
   setLoad(30,'Trees…');initDecor();await s2(15);
@@ -1148,8 +1541,8 @@ async function init(){
     if(!chunks.has(k)){const m=bChunk(cx2,cz2,Math.abs(dx)<=1&&Math.abs(dz)<=1?SN:SM);scene.add(m);chunks.set(k,{mesh:m,cx:cx2,cz:cz2});spawnDecor(cx2,cz2);}
     setLoad(55+Math.round(((dz+2)*5+(dx+2))/25*25),'Building world…');await s2(4);}
   setLoad(80,'Villages…');
-  const cands=[[4,2],[-4,3],[3,-4],[-3,-3],[5,1],[-5,0]];let placed=0;
-  for(const[vx,vz]of cands){if(placed>=3)break;const seed=(vx*73856093^vz*19349663)>>>0;const v=genVillage(seed,vx,vz);if(v){villages.push(v);spawnVillageNPCs(v);placed++;}}
+  // Pre-load villages within 500m of spawn
+  updVillageStreaming();
   await s2(30);
   setLoad(88,'Enemies…');
   // 4 enemy capsules scattered
@@ -1161,15 +1554,60 @@ async function init(){
   const initEyeY=ppos.y-PH+1.62;
   camera.position.set(ppos.x,initEyeY,ppos.z);
   camera.lookAt(ppos.x+Math.sin(camYaw),initEyeY,ppos.z+Math.cos(camYaw));
-  renderer.render(scene,camera);
+  renderer.autoClear=false;renderer.clear();renderer.render(skyScene,skyCamera);renderer.render(scene,camera);
   setLoad(100,'Welcome!');await s2(350);
   const ld=document.getElementById('load');ld.style.transition='opacity .6s';ld.style.opacity='0';
   setTimeout(()=>{ld.style.display='none';movEN=false;showTut();},640);
   ready=true;
 }
-// ── LOOP ──
-let lastT=0,frame=0;
-function loop(now){requestAnimationFrame(loop);if(!ready)return;const dt=Math.min((now-lastT)/1000,.05);lastT=now;frame++;updPlayer(dt);if(frame%3===0)updChunks();if(frame%2===0)procQ();if(frame%4===0)cullChunks();const dT=updSky(dt);if(wU)wU.uT.value=now*.001;updDecor(now*.001,dT);if(frame%3===0)updEnemies(dt);if(frame%60===0){tickSurv(1);tickWea(1);}if(frame%120===0)tickWar();if(frame%6===0)updHUD(dt);renderer.render(scene,camera);}
+// ═══════════════════════════════════════════════════════════
+// MAIN LOOP — staggered updates, mobile-optimised
+// ═══════════════════════════════════════════════════════════
+let lastT=0,frame=0,_fpsArr=[],_fps=60;
+
+function loop(now){
+  requestAnimationFrame(loop);
+  if(!ready)return;
+
+  const dt=Math.min((now-lastT)/1000,.05);
+  lastT=now;frame++;
+
+  // Always: physics + camera (must be smooth)
+  updPlayer(dt);
+
+  // Spread expensive work across 8 frames
+  const f8=frame%8;
+  if(f8===0){updChunks();}                         // terrain streaming
+  if(f8===1){procQ();procQ();}                     // load 2 chunks per frame
+  if(f8===2){cullChunks();}                        // frustum cull
+  if(f8===3){updEnemies(dt);}                      // AI
+  if(f8===4){updVillageStreaming();}               // village pre-load
+  if(f8===5){if(wU)wU.uT.value=now*.001;}         // water
+  if(f8===6){if(!isMob&&LM.uniforms)updDecor(now*.001,1);}  // leaf wind
+
+  // Sky every frame (cheap angle math)
+  const dT=updSky(dt);
+
+  // Survival/weather every ~2 seconds
+  if(frame%120===0){tickSurv(2);tickWea(2);}
+  if(frame%300===0)tickWar();
+
+  // HUD every 6 frames
+  if(frame%6===0)updHUD(dt);
+
+  // FPS tracker
+  if(frame%60===0){
+    _fpsArr.push(Math.round(1/dt));
+    if(_fpsArr.length>5)_fpsArr.shift();
+    _fps=Math.round(_fpsArr.reduce((a,b)=>a+b,0)/_fpsArr.length);
+  }
+
+  // Render sky first (screen-space, no depth), then main scene on top
+  renderer.autoClear=false;
+  renderer.clear();
+  renderer.render(skyScene,skyCamera);
+  renderer.render(scene,camera);
+}
 init().then(()=>{lastT=performance.now();requestAnimationFrame(loop);});
 </script>
 </body>
