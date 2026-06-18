@@ -553,15 +553,18 @@ function spawnDecor(cx,cz){
   const tries=isMob?8:14;
   for(let i=0;i<tries;i++){
     const wx=ox+(r()-.5)*CS,wz=oz+(r()-.5)*CS,h=tH(wx,wz);
-    if(h<1.8)continue;
+    // Hard water/beach guard — nothing below y=2.2 (water=y<1.4, beach sand y<2.2)
+    if(h<2.2)continue;
     const b=getBiome(wx,wz),nm=tN(wx,wz),sl=Math.acos(Math.min(nm.y,1))*180/Math.PI;
+    // Trees ONLY in green biomes — never in desert, never on steep cliffs
+    const canTree=(b==='forest'||b==='plains'||b==='hills')&&sl<30&&h<22;
     const dens=densFor(b,h,sl),roll=r();
-    if(dens.t>0&&roll<dens.t*.17){
+    if(canTree&&dens.t>0&&roll<dens.t*.17){
       const tp=b==='forest'?r()>.85&&h>10?'ancient':r()>.5?'large':'medium':r()>.7?'large':'medium';
       addTree(wx,h,wz,(cx*99991^cz*48611^i*7919)>>>0,tp,tL,lL);
-    }else if(dens.r>0&&roll<dens.r*.22){
+    }else if(dens.r>0&&roll<dens.r*.22&&h>2.2){
       addRock(wx,h,wz,(cx*11317^cz*77291^i*3571)>>>0,rL);
-    }else if(dens.b>0&&roll<dens.b*.14&&h>2&&sl<25){
+    }else if(dens.b>0&&roll<dens.b*.14&&h>2.5&&sl<25&&b!=='desert'){
       addBush(wx,h,wz,(cx*55001^cz*31337^i*1009)>>>0,bL);
     }
   }
@@ -688,12 +691,254 @@ function buildLights(){
   scene.add(sunL);
   scene.add(new THREE.HemisphereLight(0x87ceeb,0x3a7a3a,0.25));
 }
-// ── WATER (light blue fix) ──
-let wU;
-function buildWater(){wU={uT:{value:0}};const mat=new THREE.ShaderMaterial({uniforms:wU,transparent:true,depthWrite:false,vertexShader:`uniform float uT;varying vec2 vU;varying float vW;void main(){vU=uv;vec3 p=position;p.y+=sin(p.x*.09+uT)*.28+sin(p.z*.11+uT*.6)*.22;vW=p.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varying vec2 vU;varying float vW;uniform float uT;void main(){vec3 sh=vec3(.28,.72,.88),dp=vec3(.10,.50,.75);vec3 c=mix(sh,dp,clamp(-vW*.3+.5,0.,1.));float g=sin(vU.x*30.+uT)*sin(vU.y*28.-uT*.7)*.5+.5;c+=vec3(.3,.45,.5)*g*.06;gl_FragColor=vec4(clamp(c,0.,1.),.78);}`});
-// Smaller plane, fewer segments = much less GPU work
-const wm=new THREE.Mesh(new THREE.PlaneGeometry(600,600,3,3),mat);
-wm.rotation.x=-Math.PI/2;wm.position.y=1.4;scene.add(wm);}
+// ══════════════════════════════════════════════════════════════
+// ANIME OCEAN SYSTEM — Dynamic waves, foam, bubbles, wet sand
+// Colour: #00FFFF base, transparent, mobile-optimised
+// ══════════════════════════════════════════════════════════════
+let wU, oceanMesh, foamMesh, wetSandMesh;
+let bubbles=[], foamParticles=[];
+let oceanAudioCtx=null, waveGain=null;
+const WATER_Y=1.4;
+const MAX_BUBBLES=isMob?50:120;
+const MAX_FOAM=isMob?80:200;
+
+// ── Bubble pool ──
+const _bGeo=new THREE.SphereGeometry(.12,4,4);
+const _bMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.7,depthWrite:false});
+
+// ── Foam sprite (flat disc) ──
+const _fGeo=new THREE.PlaneGeometry(1,1);
+const _fMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.6,depthWrite:false,side:THREE.DoubleSide});
+
+function buildWater(){
+  // ── Main ocean surface ──
+  wU={uT:{value:0},uWind:{value:1.0},uStorm:{value:0.0}};
+  const segs=isMob?48:96;
+  const mat=new THREE.ShaderMaterial({
+    uniforms:wU,
+    transparent:true,
+    depthWrite:false,
+    side:THREE.DoubleSide,
+    vertexShader:`
+      uniform float uT,uWind,uStorm;
+      varying vec2 vU;
+      varying float vH;
+      varying vec3 vWP;
+      void main(){
+        vU=uv;
+        vec3 p=position;
+        float storm=1.0+uStorm*2.5;
+        float wind=uWind;
+        /* Large ocean swell */
+        float sw1=sin(p.x*.018+uT*.55)*1.4*storm
+                 +sin(p.z*.022+uT*.42)*1.1*storm;
+        /* Medium waves */
+        float sw2=sin(p.x*.055+p.z*.04+uT*1.1)*.5*wind
+                 +sin(p.z*.06+p.x*.035-uT*.9)*.4*wind;
+        /* Surface ripple */
+        float sw3=sin(p.x*.18+uT*2.2)*.12
+                 +sin(p.z*.16+uT*1.9)*.10;
+        p.y+=sw1+sw2+sw3;
+        vH=p.y;
+        vWP=(modelMatrix*vec4(p,1.)).xyz;
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);
+      }
+    `,
+    fragmentShader:`
+      uniform float uT,uWind,uStorm;
+      varying vec2 vU;
+      varying float vH;
+      varying vec3 vWP;
+
+      /* Tight anime foam lines — only on wave crests */
+      float foamLine(vec2 uv,float sc,float spd){
+        vec2 u=uv*sc;
+        u.x+=uT*spd; u.y+=uT*spd*.6;
+        /* Thin stripe pattern — only bright at very edge */
+        float stripe=abs(fract(u.x+u.y)-.5);
+        return smoothstep(.48,.50,stripe);  /* very thin white lines only */
+      }
+      void main(){
+        /* ── Base colour: strong #00FFFF cyan ── */
+        vec3 cyan   =vec3(0.,1.,1.);        /* #00FFFF  shallow */
+        vec3 teal   =vec3(0.,.55,.70);      /* deeper teal */
+        vec3 deep   =vec3(0.,.30,.50);      /* deep ocean */
+
+        /* Depth gradient based on wave height */
+        float d=clamp((-vH+1.0)*.25,0.,1.);
+        vec3 col=mix(cyan,mix(teal,deep,d*.6),d*.5);
+        /* col is now solidly cyan-to-teal, never white */
+
+        /* Thin white foam ONLY on high wave crests */
+        float crest=clamp((vH-0.8)*1.2,0.,1.);   /* only top 20% of waves */
+        float f1=foamLine(vU,6.,.14)*crest;
+        float f2=foamLine(vU+.17,10.,.22)*crest;
+        float foam=clamp(f1*.5+f2*.3,0.,1.)*.30; /* max 30% white blend */
+        col=mix(col,vec3(1.,1.,1.),foam);
+
+        /* Subtle specular shimmer — tinted cyan not white */
+        float sh=sin(vU.x*50.+uT*2.8)*sin(vU.y*48.-uT*2.2)*.5+.5;
+        col+=vec3(0.,.15,.15)*pow(sh,5.)*.10;
+
+        /* Shoreline foam — THIN strip only right at waterline */
+        float shore=clamp(1.-(vH+0.2)*4.,0.,1.);  /* very narrow band */
+        col=mix(col,vec3(.85,1.,1.),shore*.35);     /* cyan-tinted, not pure white */
+
+        /* Alpha: nice transparency, cyan still visible */
+        float alpha=mix(.55,.78,d);
+        gl_FragColor=vec4(clamp(col,0.,1.),alpha);
+      }
+    `
+  });
+  const sz=isMob?600:900;
+  oceanMesh=new THREE.Mesh(new THREE.PlaneGeometry(sz,sz,segs,segs),mat);
+  oceanMesh.rotation.x=-Math.PI/2;
+  oceanMesh.position.y=WATER_Y;
+  scene.add(oceanMesh);
+
+  // ── Wet sand band (dark sand strip at waterline) ──
+  const wsGeo=new THREE.PlaneGeometry(sz,sz,4,4);
+  const wsMat=new THREE.MeshLambertMaterial({color:0x8a7252,transparent:true,opacity:.55,depthWrite:false});
+  wetSandMesh=new THREE.Mesh(wsGeo,wsMat);
+  wetSandMesh.rotation.x=-Math.PI/2;
+  wetSandMesh.position.y=WATER_Y-.02; // just below water surface
+  scene.add(wetSandMesh);
+
+  // ── Shoreline foam strip ──
+  const fGeo=new THREE.PlaneGeometry(sz,sz,isMob?24:48,isMob?24:48);
+  const fMat=new THREE.ShaderMaterial({
+    transparent:true,depthWrite:false,
+    uniforms:{uT:{value:0}},
+    vertexShader:`uniform float uT;varying vec2 vU;varying float vH2;void main(){vU=uv;vec3 p=position;p.y+=sin(p.x*.08+uT*1.8)*.35+sin(p.z*.09+uT*1.3)*.28;vH2=p.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+    fragmentShader:`
+      uniform float uT;varying vec2 vU;varying float vH2;
+      float n(vec2 u){return fract(sin(dot(u,vec2(127.1,311.7)))*43758.5);}
+      void main(){
+        vec2 uv2=vU*18.+vec2(uT*.3,-uT*.2);
+        float f=n(floor(uv2));
+        float wave=sin(vU.x*22.+uT*2.8)*sin(vU.y*18.-uT*2.)*0.5+0.5;
+        float foam=clamp(wave*.7+f*.3,0.,1.);
+        /* only show near waterline */
+        float shore=clamp(1.-abs(vH2+.1)*3.,0.,1.);
+        gl_FragColor=vec4(1.,1.,1.,foam*shore*.75);
+      }
+    `
+  });
+  foamMesh=new THREE.Mesh(fGeo,fMat);
+  foamMesh.rotation.x=-Math.PI/2;
+  foamMesh.position.y=WATER_Y+.05;
+  scene.add(foamMesh);
+}
+
+// ── Spawn a bubble near shore ──
+function spawnBubble(x,z){
+  if(bubbles.length>=MAX_BUBBLES)return;
+  const b=new THREE.Mesh(_bGeo,_bMat.clone());
+  b.position.set(x+(Math.random()-.5)*3,WATER_Y+Math.random()*.3,z+(Math.random()-.5)*3);
+  b._life=2+Math.random()*2;
+  b._age=0;
+  b._vy=.06+Math.random()*.08;
+  b._sc=.1+Math.random()*.25;
+  b.scale.setScalar(b._sc);
+  scene.add(b);
+  bubbles.push(b);
+}
+
+// ── Spawn a foam particle ──
+function spawnFoam(x,z){
+  if(foamParticles.length>=MAX_FOAM)return;
+  const f=new THREE.Mesh(_fGeo,_fMat.clone());
+  f.rotation.x=-Math.PI/2;
+  f.position.set(x+(Math.random()-.5)*4,WATER_Y+.08,z+(Math.random()-.5)*4);
+  f._life=1.5+Math.random()*2;
+  f._age=0;
+  f._dx=(Math.random()-.5)*.015;
+  f._dz=(Math.random()-.5)*.015;
+  const s=.3+Math.random()*.7;
+  f.scale.set(s,s,s);
+  scene.add(f);
+  foamParticles.push(f);
+}
+
+// ── Tick bubbles + foam every frame ──
+function tickOceanFX(dt){
+  const px=ppos.x, pz=ppos.z;
+  const nearWater=tH(px,pz)<WATER_Y+1.5;
+
+  // Spawn near player if close to water
+  if(nearWater&&Math.random()<(isMob?.04:.09)){
+    const ang=Math.random()*Math.PI*2,d=4+Math.random()*12;
+    spawnBubble(px+Math.cos(ang)*d, pz+Math.sin(ang)*d);
+  }
+  if(nearWater&&Math.random()<(isMob?.06:.15)){
+    const ang=Math.random()*Math.PI*2,d=2+Math.random()*8;
+    spawnFoam(px+Math.cos(ang)*d, pz+Math.sin(ang)*d);
+  }
+
+  // Tick bubbles
+  for(let i=bubbles.length-1;i>=0;i--){
+    const b=bubbles[i];
+    b._age+=dt;
+    b.position.y+=b._vy*dt;
+    const grow=1+b._age*.4;
+    b.scale.setScalar(b._sc*grow);
+    b.material.opacity=Math.max(0,1-b._age/b._life)*.7;
+    if(b._age>=b._life){scene.remove(b);b.material.dispose();bubbles.splice(i,1);}
+  }
+
+  // Tick foam
+  for(let i=foamParticles.length-1;i>=0;i--){
+    const f=foamParticles[i];
+    f._age+=dt;
+    f.position.x+=f._dx;
+    f.position.z+=f._dz;
+    f.material.opacity=Math.max(0,(1-f._age/f._life))*.6;
+    if(f._age>=f._life){scene.remove(f);f.material.dispose();foamParticles.splice(i,1);}
+  }
+
+  // Move ocean + foam meshes with player (x/z only, keep centred)
+  if(oceanMesh){oceanMesh.position.x=px;oceanMesh.position.z=pz;}
+  if(foamMesh){foamMesh.position.x=px;foamMesh.position.z=pz;}
+  if(wetSandMesh){wetSandMesh.position.x=px;wetSandMesh.position.z=pz;}
+}
+
+// ── Ocean audio (Web Audio API, no files needed) ──
+function initOceanAudio(){
+  try{
+    oceanAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    waveGain=oceanAudioCtx.createGain();waveGain.gain.value=0;
+    waveGain.connect(oceanAudioCtx.destination);
+    // Pink-ish noise for wave ambience
+    const buf=oceanAudioCtx.createBuffer(1,oceanAudioCtx.sampleRate*4,oceanAudioCtx.sampleRate);
+    const d=buf.getChannelData(0);
+    let b0=0,b1=0,b2=0;
+    for(let i=0;i<d.length;i++){
+      const w=Math.random()*2-1;
+      b0=.99886*b0+w*.0555179;b1=.99332*b1+w*.0750759;b2=.96900*b2+w*.1538520;
+      d[i]=(b0+b1+b2+w*.0848+Math.random()*.0002)*.11;
+    }
+    const src=oceanAudioCtx.createBufferSource();
+    src.buffer=buf;src.loop=true;src.connect(waveGain);src.start();
+  }catch(e){}
+}
+function tickOceanAudio(){
+  if(!waveGain)return;
+  const h=tH(ppos.x,ppos.z);
+  const nearVol=Math.max(0,1-(h-WATER_Y)*0.18);
+  waveGain.gain.setTargetAtTime(nearVol*.18,oceanAudioCtx.currentTime,.5);
+}
+
+// ── Update ocean uniforms each frame (weather integration) ──
+function updOcean(now, weatherStr){
+  if(!wU)return;
+  wU.uT.value=now*.001;
+  if(foamMesh&&foamMesh.material.uniforms)foamMesh.material.uniforms.uT.value=now*.001;
+  // Weather: storm=1 means storm, 0=calm
+  const storm=weatherStr==='storm'?1:weatherStr==='rain'?.5:0;
+  const wind=weatherStr==='windy'?1.6:weatherStr==='storm'?2.2:1.0;
+  wU.uWind.value+=(wind-wU.uWind.value)*.02;
+  wU.uStorm.value+=(storm-wU.uStorm.value)*.01;
+}
 // ── DYNAMIC FOG — hides chunk streaming, changes by time of day ──
 // Morning(0.25): dense mist. Noon(0.5): clear. Dusk(0.75): warm haze. Night: heavy dark fog.
 let _skyF=0;
@@ -1273,9 +1518,13 @@ const surv={hunger:80,maxH:100,thirst:100,maxT:100,temp:20};
 function tickSurv(dt){const b=getBiome(ppos.x,ppos.z);surv.hunger=Math.max(0,surv.hunger-.4*dt);surv.thirst=Math.max(0,surv.thirst-.6*dt);if(b==='desert')surv.temp=Math.min(45,surv.temp+.5*dt);else surv.temp=Math.max(10,surv.temp-.1*dt);if(surv.hunger<20)player.sta=Math.max(0,player.sta-5*dt);if(surv.thirst<20)player.hp=Math.max(1,player.hp-2*dt);if(surv.temp>40)player.hp=Math.max(1,player.hp-3*dt);}
 // ── WEATHER ──
 const WEA=[{n:'Clear',i:'☀️'},{n:'Rain',i:'🌧️'},{n:'Storm',i:'⛈️'},{n:'Heatwave',i:'🔥'},{n:'Fog',i:'🌫️'}];
-let curW=WEA[0],wT2=120;
-function tickWea(dt){wT2-=dt;if(wT2<=0){wT2=90+Math.random()*120;curW=WEA[Math.floor(Math.random()*WEA.length)];addNotif(`${curW.i} ${curW.n}`,'');document.getElementById('weather-pill').textContent=`${curW.i} ${curW.n}`;}}
-// ── WAR ──
+let curW=WEA[0],wT2=120,curWeather='clear';
+function tickWea(dt){wT2-=dt;if(wT2<=0){wT2=90+Math.random()*120;curW=WEA[Math.floor(Math.random()*WEA.length)];curWeather=curW.n.toLowerCase();addNotif(`${curW.i} ${curW.n}`,'');document.getElementById('weather-pill').textContent=`${curW.i} ${curW.n}`;}}
+// Init ocean audio on first user touch (browser autoplay policy)
+let _audioInited=false;
+function tryInitAudio(){if(!_audioInited){_audioInited=true;initOceanAudio();}}
+document.addEventListener('pointerdown',tryInitAudio,{once:true});
+document.addEventListener('keydown',tryInitAudio,{once:true});// ── WAR ──
 let warT=300;function tickWar(){warT--;if(warT<=0){warT=200+Math.random()*300;const kk=Object.keys(KINGDOMS);const k1=kk[Math.floor(Math.random()*kk.length)];let k2=kk[Math.floor(Math.random()*kk.length)];while(k2===k1)k2=kk[Math.floor(Math.random()*kk.length)];if(!KINGDOMS[k1].atWarWith.includes(k2)){KINGDOMS[k1].atWarWith.push(k2);KINGDOMS[k2].atWarWith.push(k1);const wb=document.getElementById('warbanner');wb.style.display='block';wb.textContent=`⚔️ ${KINGDOMS[k1].name} vs ${KINGDOMS[k2].name}!`;setTimeout(()=>wb.style.display='none',5000);}}}
 // ── REP ──
 function gainRep(k,n){if(!KINGDOMS[k])return;KINGDOMS[k].rep=Math.min(100,KINGDOMS[k].rep+n);addNotif(`${KINGDOMS[k].icon} Rep +${n} → ${repLbl(k)}`,'');updRepHUD();}
@@ -1582,8 +1831,11 @@ function loop(now){
   if(f8===2){cullChunks();}                        // frustum cull
   if(f8===3){updEnemies(dt);}                      // AI
   if(f8===4){updVillageStreaming();}               // village pre-load
-  if(f8===5){if(wU)wU.uT.value=now*.001;}         // water
+  if(f8===5){updOcean(now, curWeather);tickOceanAudio();}  // ocean system
   if(f8===6){if(!isMob&&LM.uniforms)updDecor(now*.001,1);}  // leaf wind
+
+  // Ocean FX (bubbles + foam) every frame
+  tickOceanFX(dt);
 
   // Sky every frame (cheap angle math)
   const dT=updSky(dt);
