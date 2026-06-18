@@ -442,7 +442,7 @@ function rng(seed){
 const TM =new THREE.MeshLambertMaterial({color:0x6b3e1e});
 const RMA=new THREE.MeshLambertMaterial({color:0x7a7570});
 const BMA=new THREE.MeshLambertMaterial({color:0x2e7a1a});
-const TGE=new THREE.CylinderGeometry(.08,.28,1,5,1);
+const TGE=new THREE.CylinderGeometry(.22,.52,1,6,1);
 const LGE=new THREE.IcosahedronGeometry(1,0);
 const RGE=new THREE.DodecahedronGeometry(1,0);
 const BGE=new THREE.IcosahedronGeometry(1,0);
@@ -489,7 +489,7 @@ function addTree(wx,wy,wz,seed,type,tL,lL){
   if(trIM.count>=MT-3||leIM.count>=ML-4)return;
   const r=rng(seed);const[mn,mx]=TH2[type];
   const th=mn+r()*(mx-mn),ry=r()*Math.PI*2;
-  const trR=type==='ancient'?.5:type==='large'?.3:type==='medium'?.2:.12;
+  const trR=type==='ancient'?1.1:type==='large'?.75:type==='medium'?.55:.35;
   const lean=(r()-.5)*.15,ti=trIM.count;
   sIM(trIM,ti,wx+lean,wy+th*.5,wz+lean,trR,th,trR,ry);trIM.count++;tL.push(ti);
   const lc=type==='ancient'?4:type==='large'?3:2;
@@ -902,7 +902,24 @@ function tickOceanFX(dt){
   if(wetSandMesh){wetSandMesh.position.x=px;wetSandMesh.position.z=pz;}
 }
 
-// ── Ocean audio (Web Audio API, no files needed) ──
+// ── UNDERWATER OVERLAY — shows when camera dips below water ──
+let _uwDiv=null;
+function buildUnderwaterFX(){
+  _uwDiv=document.createElement('div');
+  _uwDiv.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:90;opacity:0;transition:opacity .4s;background:rgba(0,220,220,.38);';
+  document.body.appendChild(_uwDiv);
+}
+function tickUnderwater(){
+  if(!_uwDiv)return;
+  const camY=camera.position.y;
+  // Wave height at camera XZ — approximate max wave = +2.5 above WATER_Y
+  const underwaterThreshold=WATER_Y+1.8;
+  const isUnder=camY<underwaterThreshold&&tH(camera.position.x,camera.position.z)<WATER_Y+0.5;
+  _uwDiv.style.opacity=isUnder?'1':'0';
+  // Also tint renderer clear color cyan when underwater
+  if(isUnder) renderer.setClearColor(0x00cccc,1);
+  else renderer.setClearColor(0x7ab4d8,1);
+}
 function initOceanAudio(){
   try{
     oceanAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
@@ -998,55 +1015,55 @@ const mWell=new THREE.MeshLambertMaterial({color:0x8a7560});
 const mWellW=new THREE.MeshLambertMaterial({color:0x5a4030});
 
 function buildHouseFallback(type,wx,wy,wz,ry){
-  // Player height = PH = 1.8 units. Scale houses relative to that.
-  // Chief: very tall and wide. Rich: medium. Common: small but visible.
-  // ALL positions set so bottom of house sits exactly ON terrain surface (wy).
   const g=new THREE.Group();
-  const W=type===1?18:type===2?11:7;   // width
-  const H=type===1?10:type===2?6.5:4.5; // wall height (chief = ~5.5x player height)
-  const D=type===1?20:type===2?12:8;   // depth
+  // Chief = 2× the noble (type2) in every dimension
+  const W=type===1?26:type===2?13:7;
+  const H=type===1?14:type===2?7:4.5;
+  const D=type===1?28:type===2?14:8;
   const wm=type===1?mWall1:type===2?mWall2:mWall3;
 
-  // Foundation slab — sits ON ground (y=0 to y=0.3)
-  const fnd=new THREE.Mesh(new THREE.BoxGeometry(W+1,0.35,D+1),mWell);
-  fnd.position.y=0.17;fnd.receiveShadow=true;g.add(fnd);
+  // Foundation slab — always at y=0, sinks into ground if needed
+  const fnd=new THREE.Mesh(new THREE.BoxGeometry(W+1.2,0.5,D+1.2),mWell);
+  fnd.position.y=0.25;fnd.receiveShadow=true;g.add(fnd);
 
   // Walls — start at foundation top
   const walls=new THREE.Mesh(new THREE.BoxGeometry(W,H,D),wm);
-  walls.position.y=0.35+H/2;walls.castShadow=true;walls.receiveShadow=true;g.add(walls);
+  walls.position.y=0.5+H/2;walls.castShadow=true;walls.receiveShadow=true;g.add(walls);
 
   // Roof (pyramid)
-  const rh=H*0.55+1;
-  const rg=new THREE.ConeGeometry(Math.max(W,D)*0.74,rh,4);rg.rotateY(Math.PI/4);
+  const rh=H*0.55+1.5;
+  const rg=new THREE.ConeGeometry(Math.max(W,D)*0.76,rh,4);rg.rotateY(Math.PI/4);
   const roof=new THREE.Mesh(rg,mRoof);
-  roof.position.y=0.35+H+rh/2-0.15;roof.castShadow=true;g.add(roof);
+  roof.position.y=0.5+H+rh/2-0.2;roof.castShadow=true;g.add(roof);
 
-  // Door — centred on front face, bottom at foundation top
-  const dh=H*0.48,dw=W*0.12;
-  const door=new THREE.Mesh(new THREE.BoxGeometry(dw,dh,0.18),mDoor);
-  door.position.set(0,0.35+dh/2,D/2+0.08);g.add(door);
+  // Door
+  const dh=H*0.5,dw=Math.max(W*0.12,1.4);
+  const door=new THREE.Mesh(new THREE.BoxGeometry(dw,dh,0.22),mDoor);
+  door.position.set(0,0.5+dh/2,D/2+0.1);g.add(door);
 
-  // Windows — two each side
-  const ws=type===1?1.8:type===2?1.2:0.9;
+  // Windows
+  const ws=type===1?2.4:type===2?1.5:1.0;
   for(const wsx of[W*0.27,-W*0.27]){
-    const win=new THREE.Mesh(new THREE.BoxGeometry(ws,ws*0.8,0.12),mWin);
-    win.position.set(wsx,0.35+H*0.58,D/2+0.08);g.add(win);
+    const win=new THREE.Mesh(new THREE.BoxGeometry(ws,ws*0.8,0.14),mWin);
+    win.position.set(wsx,0.5+H*0.58,D/2+0.1);g.add(win);
   }
 
-  // Chief house: decorative front columns
+  // Chief house: large decorative columns + banner + steps
   if(type===1){
     for(const cx2 of[-W*0.35,W*0.35]){
-      const col=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.6,H*0.92,8),mWall1);
-      col.position.set(cx2,0.35+H*0.46,D/2-0.5);col.castShadow=true;g.add(col);
+      const col=new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.85,H*0.95,8),mWall1);
+      col.position.set(cx2,0.5+H*0.47,D/2-0.6);col.castShadow=true;g.add(col);
     }
-    // Entrance steps
-    for(let s=0;s<3;s++){
-      const step=new THREE.Mesh(new THREE.BoxGeometry(dw*2.5,0.25,0.7),mWell);
-      step.position.set(0,0.35+s*0.25,D/2+0.5+s*0.35);g.add(step);
+    for(let s=0;s<4;s++){
+      const step=new THREE.Mesh(new THREE.BoxGeometry(dw*3,0.3,0.8),mWell);
+      step.position.set(0,0.5+s*0.3,D/2+0.6+s*0.4);g.add(step);
     }
+    // Tall banner pole
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,H*1.4,6),mWellW);
+    pole.position.set(0,0.5+H*0.7,0);g.add(pole);
   }
 
-  // Place group at terrain surface — position.y = wy so bottom (y=0) = ground
+  // Position: place so group bottom (y=0) sits ON terrain surface
   g.position.set(wx,wy,wz);
   g.rotation.y=ry||0;
   scene.add(g);return g;
@@ -1097,33 +1114,50 @@ function genVillage(seed,scx,scz){
   if(biome==='mountain'||biome==='desert')return null;
   const name=vname(seed);
   const npcDefs=[];
-  const meshes=[];  // track all scene meshes for unloading
+  const meshes=[];
+  // Track placed house footprints to prevent overlap
+  const placed=[{x:ox,z:oz,r:20}]; // chief occupies 20m radius
 
-  // Chief house at centre (1 only)
-  const chief=buildHouseGLBTracked(1,ox,wy,oz,r()*Math.PI*2,meshes);
-  npcDefs.push({x:ox+4,z:oz+9,y:wy,role:'chief',name:'',job:'Village Chief'});
-  const well=buildWell(ox-6,wy,oz-6);meshes.push(well);
+  function noOverlap(x,z,rad){return placed.every(p=>{const dx=x-p.x,dz=z-p.z;return Math.sqrt(dx*dx+dz*dz)>p.r+rad;});}
 
-  // 1-2 rich houses (reduced from 2-3)
+  // Chief house at centre — large, grounded
+  const chiefY=tH(ox,oz);
+  buildHouseGLBTracked(1,ox,chiefY,oz,r()*Math.PI*2,meshes);
+  npcDefs.push({x:ox+5,z:oz+12,y:chiefY,role:'chief',name:'',job:'Village Chief'});
+  const well=buildWell(ox-9,chiefY,oz-9);meshes.push(well);
+
+  // 1-2 rich houses — placed at safe distance from chief, no overlap
   const richN=1+Math.floor(r()*2);
   for(let i=0;i<richN;i++){
-    const ang=(i/richN)*Math.PI*2+r()*.4;
-    const dist=20+r()*5;
-    const rx=ox+Math.cos(ang)*dist, rz=oz+Math.sin(ang)*dist, ry2=tH(rx,rz);
+    let rx,rz,ry2,tries2=0;
+    do{
+      const ang=(i/richN)*Math.PI*2+r()*.6+(Math.PI*.25);
+      const dist=50+r()*20;  // was 20-25, now 50-70 — far enough apart
+      rx=ox+Math.cos(ang)*dist; rz=oz+Math.sin(ang)*dist;
+      ry2=tH(rx,rz); tries2++;
+    }while((!noOverlap(rx,rz,12)||ry2<2.5||ry2>16)&&tries2<12);
+    if(tries2>=12)continue;
+    placed.push({x:rx,z:rz,r:12});
     buildHouseGLBTracked(2,rx,ry2,rz,r()*Math.PI*2,meshes);
-    const pth=buildPath(ox,oz,rx,rz,Math.min(wy,ry2));meshes.push(pth);
+    const pth=buildPath(ox,oz,rx,rz,Math.min(chiefY,ry2));meshes.push(pth);
     npcDefs.push({x:rx+2,z:rz+3,y:ry2,role:'merchant',name:'',
-      job:['Weapons Dealer','Potion Seller','Food Trader','General Merchant'][Math.floor(r()*4)]});
+      job:['Weapons Dealer','Potion Seller','Food Trader','General Merchant','Boat Dealer'][Math.floor(r()*5)]});
   }
 
-  // 2-3 common houses (reduced from 4-7)
+  // 2-3 common houses — even further out
   const commN=2+Math.floor(r()*2);
   for(let i=0;i<commN;i++){
-    const ang=(i/commN)*Math.PI*2+r()*.5;
-    const dist=30+r()*8;
-    const cx2=ox+Math.cos(ang)*dist, cz2=oz+Math.sin(ang)*dist, cy=tH(cx2,cz2);
+    let cx2,cz2,cy,tries2=0;
+    do{
+      const ang=(i/commN)*Math.PI*2+r()*.7;
+      const dist=75+r()*25;  // was 30-38, now 75-100
+      cx2=ox+Math.cos(ang)*dist; cz2=oz+Math.sin(ang)*dist;
+      cy=tH(cx2,cz2); tries2++;
+    }while((!noOverlap(cx2,cz2,9)||cy<2.5||cy>16)&&tries2<12);
+    if(tries2>=12)continue;
+    placed.push({x:cx2,z:cz2,r:9});
     buildHouseGLBTracked(3,cx2,cy,cz2,r()*Math.PI*2,meshes);
-    const pth=buildPath(ox,oz,cx2,cz2,Math.min(wy,cy));meshes.push(pth);
+    const pth=buildPath(ox,oz,cx2,cz2,Math.min(chiefY,cy));meshes.push(pth);
     npcDefs.push({x:cx2+1.5,z:cz2+3.5,y:cy,role:'villager',name:'',
       job:['Farmer','Blacksmith','Fisher','Herbalist','Daily Worker'][Math.floor(r()*5)]});
   }
@@ -1138,7 +1172,7 @@ function buildHouseGLBTracked(type,wx,wy,wz,ry,meshArr){
     if(model){
       const box=new THREE.Box3().setFromObject(model);
       const size=new THREE.Vector3();box.getSize(size);
-      const targetW=type===1?18:type===2?11:7;
+      const targetW=type===1?26:type===2?13:7;
       const sc=targetW/Math.max(size.x,size.z,0.01);
       model.scale.setScalar(sc);model.rotation.y=ry||0;
       model.position.set(0,0,0);model.updateMatrixWorld(true);
@@ -1781,7 +1815,7 @@ let ready=false;
 async function init(){
   setLoad(5,'Skybox…');scene.fog=null;renderer.setClearColor(0x7ab4d8,1);buildSky();await s2(20);
   setLoad(14,'Lights…');buildLights();await s2(15);
-  setLoad(22,'Water…');buildWater();await s2(15);
+  setLoad(22,'Water…');buildWater();buildUnderwaterFX();await s2(15);
   setLoad(30,'Trees…');initDecor();await s2(15);
   setLoad(42,'Finding spawn…');const spH=tH(0,0);ppos.set(0,spH+PH+3,0);await s2(10);
   setLoad(55,'Terrain…');
@@ -1822,7 +1856,8 @@ function loop(now){
   lastT=now;frame++;
 
   // Always: physics + camera (must be smooth)
-  updPlayer(dt);
+  if(inBoat) updBoat(dt);
+  else updPlayer(dt);
 
   // Spread expensive work across 8 frames
   const f8=frame%8;
@@ -1833,6 +1868,7 @@ function loop(now){
   if(f8===4){updVillageStreaming();}               // village pre-load
   if(f8===5){updOcean(now, curWeather);tickOceanAudio();}  // ocean system
   if(f8===6){if(!isMob&&LM.uniforms)updDecor(now*.001,1);}  // leaf wind
+  if(f8===7){checkNearBoats();tickUnderwater();}             // boat prompt + underwater FX
 
   // Ocean FX (bubbles + foam) every frame
   tickOceanFX(dt);
@@ -1860,6 +1896,260 @@ function loop(now){
   renderer.render(skyScene,skyCamera);
   renderer.render(scene,camera);
 }
+// ══════════════════════════════════════════════════════════════════
+// BOAT SYSTEM — buy from fisherman, board, sail, dock, exit
+// ══════════════════════════════════════════════════════════════════
+const BOAT_TYPES={
+  wooden:{name:'Wooden Boat',speed:8,turn:.9,icon:'🛶',price:{g:0,s:40},color:0x8B4513},
+  fishing:{name:'Fishing Boat',speed:12,turn:.7,icon:'⛵',price:{g:2,s:0},color:0x6B7C5A},
+  kingdom:{name:'Kingdom Boat',speed:18,turn:.6,icon:'🚢',price:{g:8,s:0},color:0x3A5FA0},
+};
+const boats=[];
+let activeBoat=null, inBoat=false;
+let boatYaw=0, boatSpeed=0, boatTurnV=0;
+const BOAT_MAX_ACT=10;
+
+// Boat materials
+const mBoatHull=new THREE.MeshLambertMaterial({color:0x8B4513});
+const mBoatDeck=new THREE.MeshLambertMaterial({color:0xC8A46A});
+const mBoatMast=new THREE.MeshLambertMaterial({color:0x5C3010});
+
+function buildBoatMesh(type){
+  const g=new THREE.Group();
+  const bt=BOAT_TYPES[type]||BOAT_TYPES.wooden;
+  const hull=new THREE.MeshLambertMaterial({color:bt.color});
+
+  // Hull — flat-bottomed boat shape using boxes
+  const base=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.5,5),hull);
+  base.position.y=0.25;base.castShadow=true;g.add(base);
+  // Raised sides
+  const sideL=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.55,4.6),hull);
+  sideL.position.set(-1.0,.52,0);g.add(sideL);
+  const sideR=sideL.clone();sideR.position.set(1.0,.52,0);g.add(sideR);
+  const front=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.55,0.3),hull);
+  front.position.set(0,.52,2.4);g.add(front);
+  const back=front.clone();back.position.set(0,.52,-2.4);g.add(back);
+  // Deck
+  const deck=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.08,4.0),mBoatDeck);
+  deck.position.y=0.54;g.add(deck);
+  // Mast (wooden boats get a simple post)
+  const mast=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,3.5,6),mBoatMast);
+  mast.position.set(0,2.25,0.3);g.add(mast);
+  // Seat
+  const seat=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.12,0.5),mBoatDeck);
+  seat.position.set(0,0.6,-0.6);g.add(seat);
+
+  g.userData.boatType=type;
+  return g;
+}
+
+// Try to load boat_lowpoly.glb, fallback to procedural
+function spawnBoat(x,y,z,type='wooden'){
+  if(boats.length>=BOAT_MAX_ACT)return null;
+  const boatData={type,x,z,yaw:0,speed:0,hp:100,mesh:null,inUse:false};
+  loadGLB('boat_lowpoly.glb',model=>{
+    let mesh;
+    if(model){
+      const box=new THREE.Box3().setFromObject(model);
+      const sz=new THREE.Vector3();box.getSize(sz);
+      const sc=5/Math.max(sz.x,sz.z,.01);
+      model.scale.setScalar(sc);
+      model.position.set(0,0,0);model.updateMatrixWorld(true);
+      const box2=new THREE.Box3().setFromObject(model);
+      model.position.y=-box2.min.y;
+      model.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+      const g=new THREE.Group();g.add(model);mesh=g;
+    } else {
+      mesh=buildBoatMesh(type);
+    }
+    mesh.position.set(x,y,z);
+    scene.add(mesh);
+    boatData.mesh=mesh;
+    // Add "ENTER BOAT" prompt label stored in userData
+    mesh.userData.isBoat=true;
+    mesh.userData.boatData=boatData;
+  });
+  boats.push(boatData);
+  return boatData;
+}
+
+// ── Boat HUD button ──
+const boatHUD=document.createElement('div');
+boatHUD.id='boat-hud';
+boatHUD.style.cssText='position:fixed;bottom:160px;left:50%;transform:translateX(-50%);z-index:300;display:none;gap:10px;flex-direction:column;align-items:center;pointer-events:all;';
+boatHUD.innerHTML=`
+  <div id="boat-prompt" style="background:rgba(0,0,0,.78);border:1px solid rgba(77,217,255,.4);border-radius:8px;padding:8px 18px;color:#4dd9ff;font-size:12px;letter-spacing:1px;display:none;">⚓ ENTER BOAT  [E]</div>
+  <div id="boat-exit-btn" style="background:rgba(0,0,0,.78);border:1px solid rgba(255,120,50,.4);border-radius:8px;padding:8px 18px;color:#ff7832;font-size:12px;letter-spacing:1px;display:none;cursor:pointer;" onclick="exitBoat()">🏄 EXIT BOAT</div>
+  <div id="boat-stuck" style="background:rgba(0,0,0,.78);border:1px solid rgba(255,80,80,.4);border-radius:8px;padding:6px 14px;color:#ff5050;font-size:10px;display:none;">⛔ BOAT CANNOT MOVE ON LAND</div>
+`;
+document.getElementById('ui').appendChild(boatHUD);
+boatHUD.style.display='flex';
+
+function enterBoat(bd){
+  if(inBoat)return;
+  inBoat=true;activeBoat=bd;bd.inUse=true;
+  boatYaw=bd.yaw;boatSpeed=0;boatTurnV=0;
+  document.getElementById('boat-prompt').style.display='none';
+  document.getElementById('boat-exit-btn').style.display='block';
+  addNotif('⚓ Boarded '+BOAT_TYPES[bd.type].name+' — W/S: sail  A/D: turn  E: exit','');
+  // Disable normal player movement
+  movEN=false;
+}
+
+function exitBoat(){
+  if(!inBoat||!activeBoat)return;
+  inBoat=false;
+  const bd=activeBoat;
+  bd.inUse=false;bd.speed=0;
+  // Place player beside boat
+  const bx=bd.mesh.position.x,bz=bd.mesh.position.z;
+  const exitAng=boatYaw+Math.PI*.5;
+  ppos.x=bx+Math.cos(exitAng)*3.5;
+  ppos.z=bz+Math.sin(exitAng)*3.5;
+  ppos.y=tH(ppos.x,ppos.z)+PH+0.5;
+  pvel.set(0,0,0);
+  activeBoat=null;
+  document.getElementById('boat-exit-btn').style.display='none';
+  document.getElementById('boat-stuck').style.display='none';
+  movEN=true;
+  addNotif('🏄 Disembarked','');
+}
+
+// Wave height at a point (approximation matching vertex shader)
+function waveH(x,z,t){
+  const sw1=Math.sin(x*.018+t*.55)*1.4+Math.sin(z*.022+t*.42)*1.1;
+  const sw2=Math.sin(x*.055+z*.04+t*1.1)*.5+Math.sin(z*.06+x*.035-t*.9)*.4;
+  return WATER_Y+sw1+sw2;
+}
+
+// Keys for boat
+const bKeys={w:false,s:false,a:false,d:false};
+document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='w')bKeys.w=true;
+  if(k==='s')bKeys.s=true;
+  if(k==='a')bKeys.a=true;
+  if(k==='d')bKeys.d=true;
+  if(k==='e'&&inBoat)exitBoat();
+});
+document.addEventListener('keyup',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='w')bKeys.w=false;
+  if(k==='s')bKeys.s=false;
+  if(k==='a')bKeys.a=false;
+  if(k==='d')bKeys.d=false;
+});
+
+function updBoat(dt){
+  if(!inBoat||!activeBoat||!activeBoat.mesh)return;
+  const bd=activeBoat;
+  const bt=BOAT_TYPES[bd.type]||BOAT_TYPES.wooden;
+  const t=performance.now()*.001;
+
+  // ── Controls ──
+  const accel=bt.speed*.9;
+  if(bKeys.w) boatSpeed=Math.min(boatSpeed+accel*dt,bt.speed);
+  else if(bKeys.s) boatSpeed=Math.max(boatSpeed-accel*dt*0.7,-bt.speed*.4);
+  else boatSpeed*=(1-dt*1.8); // decelerate
+
+  if(Math.abs(boatSpeed)>0.2){
+    const tr=bt.turn*(boatSpeed/bt.speed);
+    if(bKeys.a) boatTurnV= tr;
+    else if(bKeys.d) boatTurnV=-tr;
+    else boatTurnV*=(1-dt*4);
+  }
+  boatYaw+=boatTurnV*dt*2.5;
+
+  // ── Land collision — slow/stop on land ──
+  const nx=bd.mesh.position.x+Math.sin(boatYaw)*boatSpeed*dt;
+  const nz=bd.mesh.position.z+Math.cos(boatYaw)*boatSpeed*dt;
+  const terrH=tH(nx,nz);
+  const onLand=terrH>WATER_Y+0.6;
+  if(onLand){
+    boatSpeed*=0.5;
+    document.getElementById('boat-stuck').style.display=
+      Math.abs(boatSpeed)<0.5?'block':'none';
+  } else {
+    document.getElementById('boat-stuck').style.display='none';
+    bd.mesh.position.x=nx;
+    bd.mesh.position.z=nz;
+  }
+
+  // ── Float on waves ──
+  bd.mesh.position.y=waveH(bd.mesh.position.x,bd.mesh.position.z,t);
+  // Gentle tilt
+  const wx2=waveH(bd.mesh.position.x+1,bd.mesh.position.z,t);
+  const wz2=waveH(bd.mesh.position.x,bd.mesh.position.z+1,t);
+  bd.mesh.rotation.z=Math.atan2(bd.mesh.position.y-wx2,1)*.4;
+  bd.mesh.rotation.x=Math.atan2(wz2-bd.mesh.position.y,1)*.4;
+  bd.mesh.rotation.y=boatYaw;
+
+  bd.x=bd.mesh.position.x; bd.z=bd.mesh.position.z; bd.yaw=boatYaw;
+
+  // ── Camera: third-person behind boat ──
+  const camDist=8,camH=3.5;
+  const camTX=bd.mesh.position.x-Math.sin(boatYaw)*camDist;
+  const camTZ=bd.mesh.position.z-Math.cos(boatYaw)*camDist;
+  const camTY=bd.mesh.position.y+camH;
+  camera.position.lerp(new THREE.Vector3(camTX,camTY,camTZ),dt*4);
+  camera.lookAt(bd.mesh.position.x,bd.mesh.position.y+1,bd.mesh.position.z);
+
+  // Sync player capsule to boat seat
+  ppos.x=bd.mesh.position.x;
+  ppos.z=bd.mesh.position.z;
+  ppos.y=bd.mesh.position.y+1;
+}
+
+// ── Check nearby boats for boarding prompt ──
+function checkNearBoats(){
+  if(inBoat)return;
+  let nearest=null,nearDist=5;
+  for(const bd of boats){
+    if(!bd.mesh||bd.inUse)continue;
+    const dx=bd.mesh.position.x-ppos.x,dz=bd.mesh.position.z-ppos.z;
+    const d=Math.sqrt(dx*dx+dz*dz);
+    if(d<nearDist){nearDist=d;nearest=bd;}
+  }
+  const prompt=document.getElementById('boat-prompt');
+  if(nearest){
+    prompt.style.display='block';
+    // E key handled in keydown above via enterBoat check
+    prompt.onclick=()=>enterBoat(nearest);
+  } else {
+    prompt.style.display='none';
+  }
+}
+
+// ── Fisherman NPC sells boats ──
+// Inject boat selling into the NPC shop system
+function tryBuyBoat(type){
+  const bt=BOAT_TYPES[type];
+  if(!bt){addNotif('Unknown boat type','');return;}
+  const inv=playerData.inventory;
+  const gold=inv.reduce((a,i)=>a+(i.id==='gold'?i.qty:0),0);
+  const silver=inv.reduce((a,i)=>a+(i.id==='silver'?i.qty:0),0);
+  if(gold<bt.price.g||silver<bt.price.s){
+    addNotif(`Need ${bt.price.g}g ${bt.price.s}s for ${bt.name}`,'');return;
+  }
+  // Deduct cost
+  if(bt.price.g>0){const gi=inv.find(i=>i.id==='gold');if(gi)gi.qty-=bt.price.g;}
+  if(bt.price.s>0){const si=inv.find(i=>i.id==='silver');if(si)si.qty-=bt.price.s;}
+  updMoney();
+  // Spawn boat near player on water
+  let bx=ppos.x,bz=ppos.z;
+  for(let a=0;a<16;a++){
+    const ang=a*(Math.PI/8),d=8+a*2;
+    const tx=ppos.x+Math.cos(ang)*d,tz=ppos.z+Math.sin(ang)*d;
+    if(tH(tx,tz)<WATER_Y+0.4){bx=tx;bz=tz;break;}
+  }
+  const bd=spawnBoat(bx,WATER_Y+0.3,bz,type);
+  addNotif(`${bt.icon} ${bt.name} spawned nearby!`,'discovery');
+  addNotif('Approach and press E to board','');
+}
+
+// Expose for NPC shop UI
+window.tryBuyBoat=tryBuyBoat;
+// END BOAT SYSTEM
 init().then(()=>{lastT=performance.now();requestAnimationFrame(loop);});
 </script>
 </body>
